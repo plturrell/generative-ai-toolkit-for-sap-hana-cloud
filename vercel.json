@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "buildCommand": "pip install -r requirements.txt",
+  "outputDirectory": "public",
+  "functions": {
+    "api/**/*.py": {
+      "runtime": "python3.9",
+      "memory": 1024
+    }
+  },
+  "routes": [
+    { "handle": "filesystem" },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "API_HOST": "0.0.0.0",
+    "API_PORT": "8000",
+    "LOG_LEVEL": "INFO",
+    "LOG_FORMAT": "json",
+    "AUTH_REQUIRED": "true",
+    "PROMETHEUS_ENABLED": "true",
+    "ENABLE_GPU_ACCELERATION": "false"
+  },
+  "build": {
+    "env": {
+      "PYTHON_VERSION": "3.9"
+    }
+  },
+  "github": {
+    "silent": true,
+    "autoJobCancelation": true
+  }
+}

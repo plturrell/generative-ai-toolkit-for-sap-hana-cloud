@@ -1,0 +1,82 @@
+{
+  "compute_requirements": {
+    "vm_mode": true,
+    "gpu": {
+      "type": "NVIDIA A100",
+      "count": 1,
+      "memory": "40GB"
+    },
+    "cpu": {
+      "cores": 8,
+      "memory": "32GB"
+    },
+    "storage": {
+      "size": "100GB",
+      "type": "SSD"
+    },
+    "docker": {
+      "required": true,
+      "nvidia_toolkit": true
+    },
+    "internet_access": true,
+    "environment_variables": [
+      "NGC_API_KEY",
+      "HANA_HOST",
+      "HANA_PORT",
+      "HANA_USER",
+      "HANA_PASSWORD",
+      "ENABLE_TENSORRT"
+    ]
+  },
+  "runtime_configuration": {
+    "main_notebook": "nvidia_launchable_setup.ipynb",
+    "additional_files": [
+      "AUTHENTICATION.md",
+      "NGC_DEPLOYMENT.md",
+      "TENSORRT_OPTIMIZATION.md",
+      "NVIDIA.md",
+      "publish-to-ngc.sh"
+    ],
+    "docker_images": [
+      "nvcr.io/nvidia/pytorch:24.03-py3",
+      "nvcr.io/ea-sap/hana-ai-toolkit:latest"
+    ],
+    "python_packages": [
+      "requests>=2.28.0",
+      "matplotlib>=3.5.0",
+      "pandas>=1.4.0",
+      "numpy>=1.22.0"
+    ]
+  },
+  "features": {
+    "tensorrt": {
+      "enabled": true,
+      "version": "8.6.1",
+      "precision": "fp16",
+      "workspace_size_mb": 1024
+    },
+    "hopper_optimizations": {
+      "fp8": true,
+      "transformer_engine": true,
+      "flash_attention": true
+    },
+    "container_registry": {
+      "ngc_access": true,
+      "private_registry": "nvcr.io/ea-sap"
+    }
+  },
+  "submission_metadata": {
+    "title": "SAP HANA AI Toolkit with TensorRT Optimization",
+    "description": "Accelerated generative AI toolkit for SAP HANA Cloud with NVIDIA NGC integration and TensorRT optimization",
+    "keywords": [
+      "TensorRT",
+      "NGC",
+      "SAP",
+      "HANA",
+      "generative-ai",
+      "H100",
+      "GPU-optimization"
+    ],
+    "category": "Enterprise AI"
+  }
+}
