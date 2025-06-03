@@ -13,8 +13,19 @@ The following classes are available:
 
 from typing import List
 import uuid
+import sys
+import os
 
 import pandas as pd
+
+# Add the parent directory to sys.path to be able to import constants
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+try:
+    from hana_ai.api.env_constants import SAP_AI_CORE_EMBEDDING_MODEL, DEFAULT_GPU_MEMORY_FRACTION
+except ImportError:
+    # Fallback defaults if not in API context
+    SAP_AI_CORE_EMBEDDING_MODEL = "sap-ai-core-embeddings"
+    DEFAULT_GPU_MEMORY_FRACTION = 0.8
 
 try:
     from gen_ai_hub.proxy.langchain import init_embedding_model as gen_ai_hub_embedding_model
@@ -195,18 +206,44 @@ class HANAVectorEmbeddings(Embeddings):
 
 class GenAIHubEmbeddings(Embeddings):
     """
-    A class representing the embedding service for GenAIHub.
+    A class representing the embedding service for SAP GenAI Hub.
 
     Parameters
     ----------
     deployment_id: str
-        Deployment ID. Defaults to 'text-embedding-ada-002'.
+        Deployment ID for SAP AI Core model. Defaults to SAP_AI_CORE_EMBEDDING_MODEL.
     """
     model: Embeddings
-    def __init__(self, deployment_id='text-embedding-ada-002', **kwargs):
+    def __init__(self, deployment_id=None, **kwargs):
+        # Use default if not specified
+        if deployment_id is None:
+            deployment_id = SAP_AI_CORE_EMBEDDING_MODEL
         """
-        Init embedding service from llm_commons.
+        Init embedding service from SAP GenAI Hub.
         """
+        # Ensure we only use SAP AI Core models
+        if not deployment_id.startswith('sap-ai-core'):
+            import logging
+            logging.warning(f"Non-SAP model requested: {deployment_id}. Defaulting to 'sap-ai-core-embeddings'")
+            deployment_id = 'sap-ai-core-embeddings'
+            
+        # Add NVIDIA GPU optimization if available
+        gpu_config = {}
+        try:
+            from hana_ai.api.config import settings
+            if getattr(settings, 'ENABLE_GPU_ACCELERATION', False):
+                gpu_config = {
+                    "use_gpu": True,
+                    "gpu_memory_fraction": getattr(settings, 'CUDA_MEMORY_FRACTION', DEFAULT_GPU_MEMORY_FRACTION),
+                }
+        except ImportError:
+            # If settings not available, use default GPU settings
+            gpu_config = {
+                "use_gpu": True,
+                "gpu_memory_fraction": DEFAULT_GPU_MEMORY_FRACTION,
+            }
+            
+        kwargs.update(gpu_config)
         self.model = gen_ai_hub_embedding_model(deployment_id, **kwargs)
 
     def __call__(self, input):

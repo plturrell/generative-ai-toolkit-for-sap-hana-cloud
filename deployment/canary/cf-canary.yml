@@ -1,0 +1,26 @@
+---
+applications:
+- name: hana-ai-toolkit-canary
+  memory: 4G
+  instances: 1
+  path: ../../
+  buildpacks:
+    - python_buildpack
+  command: python -m hana_ai.api.app
+  health-check-type: http
+  health-check-http-endpoint: /health
+  timeout: 180
+  env:
+    DEPLOYMENT_TYPE: canary
+    LOG_LEVEL: INFO
+    PYTHONUNBUFFERED: true
+    ENABLE_GPU_ACCELERATION: true
+    # SAP BTP specific settings
+    SAP_JWT_TRUST_ACL: '[{"clientid":"*","identityzone":"*"}]'
+  routes:
+  - route: hana-ai-toolkit-canary.${CF_DOMAIN}
+  services:
+  - hana-ai-toolkit-hana
+  - hana-ai-toolkit-aicore
+  - hana-ai-toolkit-logging
+  - hana-ai-toolkit-monitoring

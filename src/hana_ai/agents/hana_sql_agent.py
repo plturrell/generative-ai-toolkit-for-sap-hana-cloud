@@ -59,7 +59,7 @@ def create_hana_sql_agent(
     connection_context: ConnectionContext,
     tools: BaseTool = None,
     agent_type: Optional[
-        Union[AgentType, Literal["openai-tools", "tool-calling"]]
+        Union[AgentType, Literal["structured-chat-zero-shot-react-description", "tool-calling"]]
     ] = AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     callback_manager: Optional[BaseCallbackManager] = None,
     prefix: Optional[str] = None,
@@ -85,7 +85,7 @@ def create_hana_sql_agent(
         The language model to use.
     tools: BaseTool
         The tools to use.
-    agent_type: Union[AgentType, Literal["openai-tools", "tool-calling"]], optional
+    agent_type: Union[AgentType, Literal["structured-chat-zero-shot-react-description", "tool-calling"]], optional
         The type of agent to create.
     callback_manager: BaseCallbackManager, optional
         The callback manager to use.

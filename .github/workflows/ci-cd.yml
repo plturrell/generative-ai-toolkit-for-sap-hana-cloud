@@ -1,0 +1,122 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pylint mypy
+    
+    - name: Lint with pylint
+      run: |
+        pylint --disable=all --enable=unused-import,undefined-variable,unused-variable,f-string-without-interpolation src/
+    
+    - name: Type check with mypy
+      run: |
+        mypy --ignore-missing-imports src/
+    
+    - name: Test with pytest
+      run: |
+        pytest --cov=src tests/ --cov-report=xml
+    
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  build:
+    name: Build Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/${{ github.repository }}/hana-ai-toolkit
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=sha,format=short
+    
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: ./deployment/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy-to-btp:
+    name: Deploy to BTP (Production)
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Cloud Foundry CLI
+      run: |
+        curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=7&source=github" | tar -zx
+        sudo mv cf7 /usr/local/bin/cf
+        cf --version
+    
+    - name: Login to Cloud Foundry
+      run: |
+        cf api ${{ secrets.CF_API }}
+        cf auth "${{ secrets.CF_USERNAME }}" "${{ secrets.CF_PASSWORD }}"
+        cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_SPACE }}"
+    
+    - name: Deploy to Cloud Foundry
+      run: |
+        # Generate the manifest.yml file with environment variables
+        envsubst < deployment/cloudfoundry/manifest.yml.template > manifest.yml
+        cf push -f manifest.yml
+      env:
+        DEFAULT_LLM_MODEL: ${{ secrets.DEFAULT_LLM_MODEL }}
+        HANA_HOST: ${{ secrets.HANA_HOST }}
+        HANA_PORT: ${{ secrets.HANA_PORT }}
+        HANA_USER: ${{ secrets.HANA_USER }}
+        HANA_PASSWORD: ${{ secrets.HANA_PASSWORD }}
+        API_KEYS: ${{ secrets.API_KEYS }}

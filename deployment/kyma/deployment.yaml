@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hana-ai-toolkit
+  labels:
+    app: hana-ai-toolkit
+  annotations:
+    sidecar.istio.io/inject: "true"
+    sap.cloud.service: "hana-ai-toolkit"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hana-ai-toolkit
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: hana-ai-toolkit
+      annotations:
+        instrumentation.opentelemetry.io/inject-sdk: "true"
+    spec:
+      containers:
+      - name: hana-ai-toolkit
+        image: ${DOCKER_REGISTRY}/hana-ai-toolkit:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+            memory: "4Gi"
+            cpu: "2"
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+        envFrom:
+        - configMapRef:
+            name: hana-ai-config
+        - secretRef:
+            name: hana-ai-secrets
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: NVIDIA_CUDA_DEVICE_ORDER
+          value: "PCI_BUS_ID"
+        - name: NVIDIA_TF32_OVERRIDE
+          value: "1"
+        - name: NVIDIA_CUDA_CACHE_MAXSIZE
+          value: "2147483648"
+        - name: NVIDIA_CUDA_CACHE_PATH
+          value: "/tmp/cuda-cache"
+        - name: ENABLE_GPU_ACCELERATION
+          value: "true"
+        - name: CUDA_MEMORY_FRACTION
+          value: "0.8"
+        volumeMounts:
+        - name: nvidia-cache
+          mountPath: /tmp/cuda-cache
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+      volumes:
+      - name: nvidia-cache
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+      imagePullSecrets:
+      - name: docker-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hana-ai-toolkit-service
+  labels:
+    app: hana-ai-toolkit
+spec:
+  selector:
+    app: hana-ai-toolkit
+  ports:
+  - port: 80
+    targetPort: 8000
+    name: http
+  type: ClusterIP
+---
+apiVersion: gateway.kyma-project.io/v1beta1
+kind: APIRule
+metadata:
+  name: hana-ai-toolkit-api
+  labels:
+    app: hana-ai-toolkit
+spec:
+  gateway: kyma-gateway.kyma-system.svc.cluster.local
+  host: hana-ai-toolkit.${CLUSTER_DOMAIN}
+  service:
+    name: hana-ai-toolkit-service
+    port: 80
+  rules:
+    - path: /.*
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      accessStrategies:
+        - handler: jwt
+          config:
+            jwks_urls:
+              - ${XSUAA_JWKS_URL}
+            trusted_issuers:
+              - ${XSUAA_ISSUER_URL}

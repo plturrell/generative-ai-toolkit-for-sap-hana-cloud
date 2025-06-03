@@ -1,0 +1,238 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - staging
+          - production
+      canary:
+        description: 'Deploy as canary'
+        required: false
+        default: false
+        type: boolean
+      canary_weight:
+        description: 'Canary traffic weight (%)'
+        required: false
+        default: '20'
+        type: string
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: ${{ github.repository_owner }}/hana-ai-toolkit
+  CANARY_WEIGHT: ${{ github.event.inputs.canary_weight || '20' }}
+
+jobs:
+  docker-build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./deployment/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-cf:
+    name: Deploy to Cloud Foundry
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.environment != 'production' }}
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install CF CLI
+        run: |
+          curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=v8&source=github" | tar -zx
+          sudo mv cf8 /usr/local/bin/cf
+          cf version
+      
+      - name: Log in to Cloud Foundry
+        run: |
+          cf login -a ${{ secrets.CF_API }} -u ${{ secrets.BTP_USERNAME }} -p ${{ secrets.BTP_PASSWORD }} -o ${{ secrets.CF_ORG }} -s ${{ secrets.CF_SPACE }}
+      
+      - name: Prepare deployment manifest
+        run: |
+          if [[ "${{ github.event.inputs.canary }}" == "true" ]]; then
+            cp deployment/canary/cf-canary.yml manifest.yml
+            sed -i "s/\${CF_DOMAIN}/${{ secrets.CF_DOMAIN }}/g" manifest.yml
+            echo "DEPLOYMENT_TYPE=canary" >> .env
+            echo "CANARY_WEIGHT=${{ env.CANARY_WEIGHT }}" >> .env
+          else
+            cp deployment/cloudfoundry/manifest.yml.template manifest.yml
+            sed -i "s/\${CF_DOMAIN}/${{ secrets.CF_DOMAIN }}/g" manifest.yml
+          fi
+      
+      - name: Deploy to Cloud Foundry
+        run: |
+          cf push --no-start
+          cf set-env hana-ai-toolkit APP_VERSION ${GITHUB_SHA::7}
+          cf start hana-ai-toolkit
+      
+      - name: Verify deployment
+        run: |
+          cf app hana-ai-toolkit
+          URL=$(cf app hana-ai-toolkit | grep routes | awk '{print $2}')
+          curl -sSf https://$URL/health || exit 1
+
+  deploy-k8s:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'staging' || github.event.inputs.environment == 'production') }}
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Kubernetes tools
+        run: |
+          sudo snap install kubectl --classic
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh
+          ./get_helm.sh
+      
+      - name: Configure Kubernetes
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+      
+      - name: Prepare deployment files
+        run: |
+          if [[ "${{ github.event.inputs.canary }}" == "true" ]]; then
+            export CANARY_VERSION=${GITHUB_SHA::7}
+            export CONTAINER_REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            export DOMAIN=${{ secrets.K8S_DOMAIN }}
+            
+            # Update canary weight in ingress
+            sed -i "s/canary-weight: \"[0-9]*\"/canary-weight: \"${{ env.CANARY_WEIGHT }}\"/g" deployment/canary/k8s-canary.yaml
+            
+            # Apply manifest
+            envsubst < deployment/canary/k8s-canary.yaml > k8s-deploy.yaml
+          else
+            export IMAGE_VERSION=${GITHUB_SHA::7}
+            export CONTAINER_REGISTRY=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            export DOMAIN=${{ secrets.K8S_DOMAIN }}
+            
+            # Apply manifest
+            envsubst < deployment/kubernetes/deployment.yaml > k8s-deploy.yaml
+          fi
+      
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s-deploy.yaml
+          
+          # Wait for deployment to complete
+          if [[ "${{ github.event.inputs.canary }}" == "true" ]]; then
+            kubectl rollout status deployment/hana-ai-toolkit-canary --timeout=300s
+          else
+            kubectl rollout status deployment/hana-ai-toolkit --timeout=300s
+          fi
+      
+      - name: Verify deployment
+        run: |
+          # Get service URL
+          if [[ "${{ github.event.inputs.canary }}" == "true" ]]; then
+            DEPLOY_NAME="hana-ai-toolkit-canary"
+          else
+            DEPLOY_NAME="hana-ai-toolkit"
+          fi
+          
+          # Check pods are running
+          kubectl get pods -l app=$DEPLOY_NAME
+          
+          # Verify all pods are ready
+          READY=$(kubectl get pods -l app=$DEPLOY_NAME -o jsonpath='{.items[*].status.containerStatuses[0].ready}' | tr ' ' '\n' | grep -v true | wc -l)
+          if [[ $READY -ne 0 ]]; then
+            echo "Not all pods are ready!"
+            exit 1
+          fi
+          
+          echo "Deployment verified successfully!"
+
+  monitor-canary:
+    name: Monitor Canary Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-cf, deploy-k8s]
+    if: ${{ github.event.inputs.canary == 'true' }}
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests psutil
+      
+      - name: Run canary monitor
+        run: |
+          # Determine URLs based on deployment type
+          if [[ "${{ needs.deploy-k8s.result }}" == "success" ]]; then
+            PROD_URL="https://hana-ai-toolkit.${{ secrets.K8S_DOMAIN }}"
+            CANARY_URL="https://hana-ai-toolkit-canary.${{ secrets.K8S_DOMAIN }}"
+          else
+            PROD_URL="https://hana-ai-toolkit.${{ secrets.CF_DOMAIN }}"
+            CANARY_URL="https://hana-ai-toolkit-canary.${{ secrets.CF_DOMAIN }}"
+          fi
+          
+          # Run monitor script for 15 minutes
+          python deployment/canary/monitor-canary.py \
+            --production-url $PROD_URL \
+            --canary-url $CANARY_URL \
+            --check-interval 30 \
+            --error-threshold 3 \
+            --duration 0.25 \
+            --output-file canary-metrics.json
+      
+      - name: Upload metrics
+        uses: actions/upload-artifact@v3
+        with:
+          name: canary-metrics
+          path: canary-metrics.json

@@ -1,0 +1,23 @@
+{
+  "name": "hana-ai-toolkit",
+  "version": "1.0.0",
+  "description": "Generative AI Toolkit for SAP HANA Cloud with NVIDIA GPU optimization",
+  "type": "model",
+  "framework": "PyTorch",
+  "platform": "Linux",
+  "os": "Ubuntu 20.04",
+  "gpuType": "A100, H100",
+  "cudaVersion": "11.8",
+  "licenses": ["Apache-2.0"],
+  "tags": ["SAP", "HANA", "GenerativeAI", "LLM", "GPU-Optimized"],
+  "resources": {
+    "gpu": 1,
+    "minGpuMemory": 16,
+    "cpu": 8,
+    "memory": 32
+  },
+  "hopper": {
+    "optimized": true,
+    "features": ["FP8", "Transformer Engine", "Flash Attention 2", "FSDP"]
+  }
+}

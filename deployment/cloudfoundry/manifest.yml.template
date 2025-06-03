@@ -1,0 +1,49 @@
+---
+applications:
+- name: hana-ai-toolkit
+  memory: 4G
+  instances: 2
+  disk_quota: 2G
+  buildpacks:
+  - python_buildpack
+  command: python -m hana_ai.api
+  path: ../../
+  timeout: 180
+  health-check-type: http
+  health-check-http-endpoint: /
+  env:
+    ENABLE_GPU_ACCELERATION: true
+    NVIDIA_VISIBLE_DEVICES: all
+    NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    CUDA_MEMORY_FRACTION: 0.8
+    NVIDIA_CUDA_DEVICE_ORDER: PCI_BUS_ID
+    NVIDIA_TF32_OVERRIDE: 1
+    API_HOST: 0.0.0.0
+    API_PORT: ${PORT}
+    DEVELOPMENT_MODE: false
+    LOG_LEVEL: INFO
+    LOG_FORMAT: json
+    DEFAULT_LLM_MODEL: ${DEFAULT_LLM_MODEL}
+    DEFAULT_LLM_TEMPERATURE: 0.0
+    DEFAULT_LLM_MAX_TOKENS: 1000
+    AUTH_REQUIRED: true
+    API_KEYS: ${API_KEYS}
+    CORS_ORIGINS: "*.cfapps.*.hana.ondemand.com,*.hana.ondemand.com"
+    ENFORCE_HTTPS: true
+    RESTRICT_EXTERNAL_CALLS: true
+    RATE_LIMIT_PER_MINUTE: 100
+    HANA_HOST: ${HANA_HOST}
+    HANA_PORT: ${HANA_PORT}
+    HANA_USER: ${HANA_USER}
+    HANA_PASSWORD: ${HANA_PASSWORD}
+    CONNECTION_POOL_SIZE: 5
+    REQUEST_TIMEOUT_SECONDS: 300
+    MAX_REQUEST_SIZE_MB: 10
+    PROMETHEUS_ENABLED: true
+    ENABLE_MEMORY: true
+    MEMORY_EXPIRATION_SECONDS: 3600
+    ENABLE_CACHING: true
+    CACHE_TTL_SECONDS: 300
+  services:
+  - hana-ai-db   # Bound HANA service instance
+  - ai-core-service  # Bound SAP AI Core service instance

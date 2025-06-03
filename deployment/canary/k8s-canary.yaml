@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hana-ai-toolkit-canary
+  labels:
+    app: hana-ai-toolkit
+    version: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hana-ai-toolkit
+      version: canary
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: hana-ai-toolkit
+        version: canary
+    spec:
+      containers:
+      - name: hana-ai-toolkit
+        image: ${CONTAINER_REGISTRY}/hana-ai-toolkit:${CANARY_VERSION}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+            memory: "8Gi"
+            cpu: "2"
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+        env:
+        - name: DEPLOYMENT_TYPE
+          value: "canary"
+        - name: LOG_LEVEL
+          value: "INFO"
+        envFrom:
+        - configMapRef:
+            name: hana-ai-toolkit-config
+        - secretRef:
+            name: hana-ai-toolkit-secrets
+      nodeSelector:
+        cloud.sap.com/nodepool: gpu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hana-ai-toolkit-canary
+  labels:
+    app: hana-ai-toolkit
+    version: canary
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: hana-ai-toolkit
+    version: canary
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hana-ai-toolkit-canary
+  annotations:
+    kubernetes.io/ingress.class: "istio"
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "20"
+spec:
+  rules:
+  - host: hana-ai-toolkit.${DOMAIN}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hana-ai-toolkit-canary
+            port:
+              number: 8080

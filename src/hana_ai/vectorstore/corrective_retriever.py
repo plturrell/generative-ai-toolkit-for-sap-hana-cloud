@@ -22,10 +22,10 @@ except ImportError:
 
     subprocess.check_call([sys.executable, "-m", "pip", "install", "langgraph"])
     from langgraph.graph import END, StateGraph
-from langchain.output_parsers.openai_tools import PydanticToolsParser
+from langchain.output_parsers.pydantic import PydanticOutputParser
 from langchain.prompts import PromptTemplate
 from pydantic import BaseModel, Field
-from langchain_core.utils.function_calling import convert_to_openai_tool
+# Removed OpenAI specific dependency
 
 logger = logging.getLogger(__name__) #pylint: disable=invalid-name
 
@@ -114,17 +114,14 @@ class CorrectiveRetriever(object):
         # LLM
         model = self.llm
 
-        # Tool
-        grade_tool_oai = convert_to_openai_tool(grade)
-
-        # LLM with tool and enforce invocation
-        llm_with_tool = model.bind(
-            tools=[grade_tool_oai],
-            tool_choice={"type": "function", "function": {"name": "grade"}},
-        )
-
         # Parser
-        parser_tool = PydanticToolsParser(tools=[grade])
+        parser = PydanticOutputParser(pydantic_object=grade)
+        
+        # Format instructions
+        format_instructions = parser.get_format_instructions()
+        
+        # LLM setup - no OpenAI specific functionality
+        llm_with_format = model
 
         # Prompt
         prompt = PromptTemplate(
@@ -132,17 +129,20 @@ class CorrectiveRetriever(object):
             Here is the retrieved document: \n\n {context} \n\n
             Here is the user question: {question} \n
             If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-            Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.""",
-            input_variables=["context", "question"],
+            Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.
+            
+            {format_instructions}
+            """,
+            input_variables=["context", "question", "format_instructions"],
         )
 
         # Chain
-        chain = prompt | llm_with_tool | parser_tool
+        chain = prompt | llm_with_format | parser
 
         # Score
         search = "No"  # Default do not opt for second search to supplement retrieval
-        score = chain.invoke({"question": question, "context": documents})
-        grade = score[0].binary_score
+        score = chain.invoke({"question": question, "context": documents, "format_instructions": format_instructions})
+        grade = score.binary_score
         if grade == "yes":
             logger.info("---GRADE: DOCUMENT RELEVANT---")
             pass

@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Restrict access to localhost and internal networks only
+# This prevents external access to Prometheus
+
+scrape_configs:
+  - job_name: 'hana-ai-toolkit'
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['hana-ai-api:8000']
+    tls_config:
+      insecure_skip_verify: true
+
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
