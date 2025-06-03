@@ -1,0 +1,70 @@
+# Use NVIDIA PyTorch container as base
+FROM nvcr.io/nvidia/pytorch:24.03-py3
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set working directory
+WORKDIR /app
+
+# Install additional dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install TensorRT Python API
+RUN pip install --no-cache-dir nvidia-tensorrt==8.6.1.post1
+
+# Install additional NVIDIA optimization libraries
+RUN pip install --no-cache-dir \
+    flash-attn==2.5.* \
+    transformer-engine==1.3.* \
+    nvfuser
+
+# Copy requirements first to leverage Docker caching
+COPY requirements.txt requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-api.txt
+
+# Copy source code
+COPY . .
+
+# Install the package
+RUN pip install -e .
+
+# Set up a non-root user for better security
+RUN groupadd -r hanaaiuser && useradd -r -g hanaaiuser hanaaiuser
+RUN chown -R hanaaiuser:hanaaiuser /app
+USER hanaaiuser
+
+# Set proper environment variables for GPU acceleration
+ENV NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES:-all}
+ENV NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+
+# Enable Hopper-specific optimizations
+ENV HOPPER_ENABLE_FLASH_ATTENTION=true
+ENV HOPPER_ENABLE_FP8=true
+ENV HOPPER_ENABLE_TRANSFORMER_ENGINE=true
+ENV HOPPER_ENABLE_FSDP=true
+ENV ENABLE_TENSORRT=true
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:${API_PORT:-8000}/ || exit 1
+
+# Run the application
+CMD ["python3", "-m", "hana_ai.api"]
+
+# Expose API port
+EXPOSE ${API_PORT:-8000}
+EXPOSE 9090
+
+# NGC metadata labels
+LABEL com.nvidia.ngc.blueprint="true"
+LABEL com.nvidia.ngc.name="hana-ai-toolkit"
+LABEL com.nvidia.ngc.version="1.0.0"
+LABEL com.nvidia.ngc.description="Generative AI Toolkit for SAP HANA Cloud with NVIDIA GPU optimization"

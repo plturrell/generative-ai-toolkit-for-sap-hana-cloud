@@ -1,0 +1,78 @@
+name: NGC Container Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Container tag (default: latest)'
+        required: false
+        default: 'latest'
+  release:
+    types: [published]
+
+jobs:
+  build-and-push-ngc:
+    name: Build and Push to NGC
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set container tag
+        id: set-tag
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            echo "TAG=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+          else
+            echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          fi
+
+      - name: Login to NGC
+        uses: docker/login-action@v2
+        with:
+          registry: nvcr.io
+          username: ${{ secrets.NGC_API_KEY }}
+          password: ${{ secrets.NGC_API_KEY }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./deployment/Dockerfile.ngc
+          push: true
+          tags: |
+            nvcr.io/ea-sap/hana-ai-toolkit:${{ env.TAG }}
+            nvcr.io/ea-sap/hana-ai-toolkit:latest
+          cache-from: type=registry,ref=nvcr.io/ea-sap/hana-ai-toolkit:buildcache
+          cache-to: type=registry,ref=nvcr.io/ea-sap/hana-ai-toolkit:buildcache,mode=max
+
+      - name: Upload NGC Blueprint
+        run: |
+          # NGC CLI Installation
+          wget -O ngc https://ngc.nvidia.com/downloads/ngccli_linux.zip
+          unzip ngc
+          chmod u+x ngc
+          
+          # Set NGC API Key and upload blueprint
+          export NGC_API_KEY=${{ secrets.NGC_API_KEY }}
+          export NGC_CLI_AUTO_UPDATE=false
+          ./ngc registry resource upload-blueprint \
+            --model-path ./ngc-blueprint.json \
+            --description "Generative AI Toolkit for SAP HANA Cloud with NVIDIA GPU optimization" \
+            --registry "nvcr.io" \
+            --org "ea-sap" \
+            --team "hana-ai" \
+            --repository "hana-ai-toolkit" \
+            --tag ${{ env.TAG }}
+
+      - name: Notify Team
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_TITLE: "NGC Container Published"
+          SLACK_MESSAGE: "Successfully published hana-ai-toolkit:${{ env.TAG }} to NGC"
+          SLACK_COLOR: good

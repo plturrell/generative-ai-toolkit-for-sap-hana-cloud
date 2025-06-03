@@ -3,7 +3,7 @@ NVIDIA Hopper-specific optimizations for H100 GPUs.
 
 This module provides specialized optimizations for the latest NVIDIA Hopper
 architecture, including Transformer Engine integration, FP8 training/inference,
-and hardware-specific kernel optimizations.
+TensorRT acceleration, and hardware-specific kernel optimizations.
 """
 import os
 import logging
@@ -33,6 +33,21 @@ try:
 except ImportError:
     APEX_AVAILABLE = False
 
+# Check for TensorRT availability
+try:
+    import tensorrt as trt
+    TENSORRT_AVAILABLE = True
+except ImportError:
+    TENSORRT_AVAILABLE = False
+
+# Import TensorRT utilities if available
+try:
+    from .tensorrt_utils import TensorRTOptimizer, get_tensorrt_optimizer
+    TENSORRT_UTILS_AVAILABLE = True
+except ImportError:
+    TENSORRT_UTILS_AVAILABLE = False
+    logger.warning("TensorRT utilities not available. Some optimizations will be disabled.")
+
 
 class HopperOptimizer:
     """
@@ -50,7 +65,8 @@ class HopperOptimizer:
                  enable_distributed_fused_adam: bool = True,
                  enable_flash_attention_2: bool = True,
                  enable_fused_layernorm: bool = True,
-                 enable_nvfuser: bool = True):
+                 enable_nvfuser: bool = True,
+                 enable_tensorrt: bool = True):
         """
         Initialize the Hopper optimizer.
         
@@ -66,12 +82,15 @@ class HopperOptimizer:
             Whether to enable fused LayerNorm
         enable_nvfuser : bool
             Whether to enable nvFuser
+        enable_tensorrt : bool
+            Whether to enable TensorRT optimization
         """
         self.enable_fp8 = enable_fp8
         self.enable_distributed_fused_adam = enable_distributed_fused_adam
         self.enable_flash_attention_2 = enable_flash_attention_2
         self.enable_fused_layernorm = enable_fused_layernorm
         self.enable_nvfuser = enable_nvfuser
+        self.enable_tensorrt = enable_tensorrt
         
         # Check if running on Hopper architecture
         self.is_hopper = self._detect_hopper()
@@ -88,6 +107,15 @@ class HopperOptimizer:
                 logger.info("Transformer Engine initialized for FP8 computation")
             except Exception as e:
                 logger.warning(f"Failed to initialize Transformer Engine: {str(e)}")
+        
+        # Initialize TensorRT optimizer if available
+        self.tensorrt_optimizer = None
+        if TENSORRT_UTILS_AVAILABLE and self.enable_tensorrt:
+            try:
+                self.tensorrt_optimizer = get_tensorrt_optimizer()
+                logger.info("TensorRT optimizer initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize TensorRT optimizer: {str(e)}")
         
     def _detect_hopper(self) -> bool:
         """
@@ -233,7 +261,10 @@ class HopperOptimizer:
         
         return fp8_autocast(enabled=True, fp8_recipe=self.fp8_recipe)
     
-    def optimize_inference(self, model: Any) -> Any:
+    def optimize_inference(self, 
+                         model: Any, 
+                         model_name: Optional[str] = None,
+                         input_shapes: Optional[Dict[str, List[int]]] = None) -> Any:
         """
         Apply Hopper-specific inference optimizations.
         
@@ -241,6 +272,10 @@ class HopperOptimizer:
         ----------
         model : Any
             Model to optimize
+        model_name : str, optional
+            Name of the model for caching
+        input_shapes : Dict[str, List[int]], optional
+            Dictionary of input names and shapes for TensorRT
             
         Returns
         -------
@@ -249,8 +284,26 @@ class HopperOptimizer:
         """
         if not self.is_hopper or not TORCH_AVAILABLE:
             return model
+            
+        # Try TensorRT optimization first if enabled and inputs are provided
+        if self.enable_tensorrt and TENSORRT_UTILS_AVAILABLE and self.tensorrt_optimizer and input_shapes and model_name:
+            try:
+                logger.info(f"Attempting TensorRT optimization for model {model_name}")
+                trt_engine = self.tensorrt_optimizer.optimize_torch_model(
+                    model=model,
+                    model_name=model_name,
+                    input_shapes=input_shapes
+                )
+                
+                if trt_engine:
+                    logger.info(f"Model {model_name} successfully optimized with TensorRT")
+                    return trt_engine
+                else:
+                    logger.warning(f"TensorRT optimization failed for {model_name}, falling back to TorchScript")
+            except Exception as e:
+                logger.warning(f"TensorRT optimization error: {str(e)}, falling back to TorchScript")
         
-        # Convert model to TorchScript if possible
+        # Fall back to TorchScript if TensorRT fails or is not enabled
         try:
             # First set model to eval mode
             model.eval()
@@ -316,10 +369,59 @@ class HopperOptimizer:
             "enable_fused_layernorm": self.enable_fused_layernorm,
             "enable_nvfuser": self.enable_nvfuser,
             "enable_distributed_fused_adam": self.enable_distributed_fused_adam,
-            "use_hmma_fp8_accumulation": True  # Special H100 hardware feature
+            "use_hmma_fp8_accumulation": True,  # Special H100 hardware feature
+            "enable_tensorrt": self.enable_tensorrt and TENSORRT_UTILS_AVAILABLE,
+            "tensorrt_optimizer": self.tensorrt_optimizer is not None
         }
         
         return args
+        
+    def optimize_embedding_model(self,
+                               model: Any,
+                               model_name: str,
+                               embedding_dim: int,
+                               max_sequence_length: int) -> Any:
+        """
+        Optimize an embedding model with TensorRT.
+        
+        Parameters
+        ----------
+        model : torch.nn.Module
+            PyTorch embedding model to optimize
+        model_name : str
+            Name of the model for caching
+        embedding_dim : int
+            Dimension of the embeddings
+        max_sequence_length : int
+            Maximum sequence length
+            
+        Returns
+        -------
+        Any
+            Optimized model or TensorRT engine
+        """
+        if not self.enable_tensorrt or not TENSORRT_UTILS_AVAILABLE or not self.tensorrt_optimizer:
+            return model
+            
+        try:
+            trt_engine = self.tensorrt_optimizer.optimize_embedding_model(
+                model=model,
+                model_name=model_name,
+                embedding_dim=embedding_dim,
+                max_sequence_length=max_sequence_length,
+                precision="fp16" if self.is_hopper else "fp32"
+            )
+            
+            if trt_engine:
+                logger.info(f"Embedding model {model_name} successfully optimized with TensorRT")
+                return trt_engine
+            else:
+                logger.warning(f"TensorRT optimization failed for embedding model {model_name}")
+                return model
+                
+        except Exception as e:
+            logger.warning(f"Failed to optimize embedding model with TensorRT: {str(e)}")
+            return model
 
 
 def detect_and_optimize_for_hopper() -> Tuple[bool, Dict[str, Any]]:

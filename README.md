@@ -4,6 +4,7 @@
 [![CD](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/actions/workflows/cd.yml/badge.svg)](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/actions/workflows/cd.yml)
 [![API CI/CD](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/actions/workflows/api-ci.yml/badge.svg)](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/actions/workflows/api-ci.yml)
 [![NVIDIA Optimized](https://img.shields.io/badge/NVIDIA-Optimized-76B900)](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NVIDIA.md)
+[![NGC Ready](https://img.shields.io/badge/NGC-Ready-76B900)](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NGC_DEPLOYMENT.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Project Board](https://img.shields.io/badge/Project-Board-0052CC)](https://github.com/users/plturrell/projects/1)
 
@@ -14,6 +15,8 @@ Generative AI Client for SAP HANA Cloud is an extension of the existing HANA ML 
 ### Key Features
 
 - **NVIDIA GPU Acceleration**: 10x performance improvement with optimized GPU utilization - [GPU Optimization](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/GPU_OPTIMIZATION.md)
+- **TensorRT Integration**: 2-3x faster inference with optimized model execution - [TensorRT Optimization](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/TENSORRT_OPTIMIZATION.md)
+- **NGC Container Publishing**: Pre-optimized containers with NVIDIA NGC integration - [NGC Deployment](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NGC_DEPLOYMENT.md)
 - **Canary Deployment**: Advanced deployment strategies with automated verification - [Canary Deployment](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/tree/main/deployment/canary)
 - **Failover Handling**: Robust failover mechanisms for production workloads
 - **SAP BTP Optimization**: Specialized configurations for SAP Business Technology Platform - [BTP Optimization](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/BTP_OPTIMIZATION.md)
@@ -41,6 +44,20 @@ docker build -t hana-ai-toolkit .
 docker run -p 8000:8000 -p 9090:9090 hana-ai-toolkit
 ```
 
+### NVIDIA NGC Container (Recommended for GPU Workloads)
+
+```bash
+# Pull the NGC optimized container
+docker pull nvcr.io/ea-sap/hana-ai-toolkit:latest
+
+# Run with GPU acceleration
+docker run --gpus all -p 8000:8000 -p 9090:9090 \
+  --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 \
+  nvcr.io/ea-sap/hana-ai-toolkit:latest
+```
+
+For detailed NGC deployment options, see our [NGC Deployment Guide](NGC_DEPLOYMENT.md).
+
 ### SAP BTP Deployment
 
 ```bash
@@ -55,8 +72,11 @@ CANARY=true CANARY_WEIGHT=20 ./deployment/deploy.sh
 
 - [Project Board](https://github.com/users/plturrell/projects/1)
 - [Wiki Documentation](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/wiki)
+- [Authentication & Setup Guide](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/AUTHENTICATION.md)
 - [CI/CD Pipeline](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/README-CICD.md)
 - [NVIDIA Integration](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NVIDIA.md)
+- [NGC Deployment](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NGC_DEPLOYMENT.md)
+- [TensorRT Optimization](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/TENSORRT_OPTIMIZATION.md)
 - [API Documentation](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/README-API.md)
 
 ## Support, Feedback, Contributing

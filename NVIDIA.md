@@ -1,6 +1,6 @@
 # NVIDIA GPU Optimizations for SAP HANA AI Toolkit
 
-This document describes the NVIDIA GPU optimizations implemented in the SAP HANA AI Toolkit, with particular focus on advanced optimizations for H100 GPUs with Hopper architecture.
+This document describes the NVIDIA GPU optimizations implemented in the SAP HANA AI Toolkit, with particular focus on advanced optimizations for H100 GPUs with Hopper architecture and NGC deployment options.
 
 ## System Requirements
 
@@ -129,7 +129,35 @@ GPU_MEMORY_FRACTION=0.85  # Fraction of GPU memory to use
 ENABLE_GRADIENT_CHECKPOINTING=true
 ```
 
-## Deployment with NVIDIA AI Enterprise
+## Deployment with NVIDIA NGC and AI Enterprise
+
+The toolkit is available as an optimized container on NVIDIA NGC, providing enterprise-grade deployment options:
+
+### NGC Container Registry
+
+The NGC container includes:
+- Pre-installed and optimized dependencies
+- TensorRT acceleration
+- Hopper-specific optimizations for H100 GPUs
+- Production-ready configurations
+
+To pull the NGC container:
+
+```bash
+docker pull nvcr.io/ea-sap/hana-ai-toolkit:latest
+```
+
+To run with GPU acceleration:
+
+```bash
+docker run --gpus all -p 8000:8000 -p 9090:9090 \
+  --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 \
+  nvcr.io/ea-sap/hana-ai-toolkit:latest
+```
+
+For detailed NGC deployment options, see our [NGC Deployment Guide](NGC_DEPLOYMENT.md).
+
+### NVIDIA AI Enterprise
 
 The toolkit is fully compatible with NVIDIA AI Enterprise, providing:
 
@@ -138,6 +166,35 @@ The toolkit is fully compatible with NVIDIA AI Enterprise, providing:
 - Integration with NVIDIA NGC
 - Long-term stability
 
+## TensorRT Acceleration
+
+The toolkit now includes NVIDIA TensorRT integration for accelerated inference:
+
+### Benefits
+
+- Up to 3x faster inference on H100 GPUs
+- Up to 2x faster inference on A100 GPUs
+- Reduced memory footprint
+- Optimized for production workloads
+
+### Key Optimizations
+
+- Automatic precision calibration
+- Layer fusion for reduced memory transfers
+- Custom kernels for attention mechanisms
+- Dynamic batch size optimization
+- INT8 quantization support
+
+### Usage
+
+TensorRT acceleration is enabled by default in the NGC container. To explicitly enable:
+
+```bash
+docker run --gpus all -p 8000:8000 \
+  -e ENABLE_TENSORRT=true \
+  nvcr.io/ea-sap/hana-ai-toolkit:latest
+```
+
 ## Troubleshooting
 
-See `deployment/canary/GPU_OPTIMIZATION.md` for detailed troubleshooting guides.
+See `deployment/canary/GPU_OPTIMIZATION.md` for detailed troubleshooting guides, or refer to our [NGC Deployment Guide](NGC_DEPLOYMENT.md) for NGC-specific troubleshooting.

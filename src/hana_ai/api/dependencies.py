@@ -1,17 +1,27 @@
 """
 Dependencies for the FastAPI application.
 """
+import os
 import logging
 from typing import Any, Dict
 from fastapi import Request, Depends, HTTPException
 from hana_ml.dataframe import ConnectionContext
 from langchain.llms.base import BaseLLM
 
+logger = logging.getLogger(__name__)
+
 from .auth import get_api_key
 from .config import settings
 from .gpu_utils import MultiGPUManager
+from .gpu_utils_hopper import HopperOptimizer, detect_and_optimize_for_hopper
 
-logger = logging.getLogger(__name__)
+# Check for TensorRT availability
+try:
+    from .tensorrt_utils import get_tensorrt_optimizer
+    TENSORRT_AVAILABLE = True
+except ImportError:
+    TENSORRT_AVAILABLE = False
+    logger.warning("TensorRT utilities not available. Some optimizations will be disabled.")
 
 def get_connection_context(request: Request) -> ConnectionContext:
     """
@@ -184,6 +194,9 @@ def get_llm(
         try:
             from gen_ai_hub.proxy.langchain import init_llm
             
+            # First, check for Hopper architecture (H100) optimizations
+            is_hopper, hopper_specific_args = detect_and_optimize_for_hopper()
+            
             # Add performance optimization settings
             optimization_config = {
                 # Enable tensor cores if available (A100, H100, etc.)
@@ -195,13 +208,82 @@ def get_llm(
                 # Use flash attention if available
                 "use_flash_attention": True,
                 # Enable FP8 if available (H100)
-                "enable_fp8": True,
+                "enable_fp8": is_hopper,
                 # For large models, enable checkpoint activation memory optimization
                 "checkpoint_activations": max_tokens > 1000,
             }
             
-            # Merge configs
-            combined_config = {**gpu_config, **optimization_config}
+            # Add TensorRT optimization if available
+            tensorrt_config = {}
+            if TENSORRT_AVAILABLE and settings.ENABLE_TENSORRT:
+                try:
+                    # Get TensorRT optimizer with customized settings from config
+                    tensorrt_optimizer = get_tensorrt_optimizer()
+                    
+                    # Configure TensorRT cache directory
+                    if not os.path.exists(settings.TENSORRT_CACHE_DIR):
+                        os.makedirs(settings.TENSORRT_CACHE_DIR, exist_ok=True)
+                    tensorrt_optimizer.cache_dir = settings.TENSORRT_CACHE_DIR
+                    
+                    # Set precision based on settings and hardware capability
+                    precision = settings.TENSORRT_PRECISION
+                    if precision == "fp16" and not is_hopper:
+                        # Check if the GPU supports FP16
+                        if not hasattr(tensorrt_optimizer, "engines") or not tensorrt_optimizer.engines:
+                            # Default to FP32 if FP16 not supported
+                            precision = "fp32"
+                            logger.warning("FP16 not supported on this GPU, falling back to FP32")
+                    
+                    # Define input shapes for the model
+                    # This is a simplified version - in production, use model-specific configurations
+                    input_shapes = {
+                        "input_ids": [max_tokens],
+                        "attention_mask": [max_tokens]
+                    }
+                    
+                    # For models with additional inputs, add them here
+                    if "gpt" in model.lower() or "llama" in model.lower():
+                        input_shapes["position_ids"] = [max_tokens]
+                    
+                    # Build TensorRT configuration with settings
+                    tensorrt_config = {
+                        "use_tensorrt": True,
+                        "tensorrt_precision": precision,
+                        "tensorrt_input_shapes": input_shapes,
+                        "tensorrt_max_batch_size": settings.TENSORRT_MAX_BATCH_SIZE,
+                        "tensorrt_workspace_size": settings.TENSORRT_WORKSPACE_SIZE_MB * (1024 * 1024),  # Convert to bytes
+                        "tensorrt_dynamic_shapes": True,
+                        "tensorrt_builder_optimization_level": settings.TENSORRT_BUILDER_OPTIMIZATION_LEVEL,
+                        "tensorrt_cache_dir": settings.TENSORRT_CACHE_DIR,
+                    }
+                    
+                    # Add model type hint if possible (helps TensorRT optimizer)
+                    if "bert" in model.lower():
+                        tensorrt_config["model_type"] = "encoder"
+                    elif "gpt" in model.lower() or "llama" in model.lower():
+                        tensorrt_config["model_type"] = "decoder"
+                    elif "t5" in model.lower() or "bart" in model.lower():
+                        tensorrt_config["model_type"] = "encoder-decoder"
+                    
+                    logger.info(f"TensorRT optimization enabled for LLM with precision {precision}")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize TensorRT: {str(e)}")
+            
+            # If we're on Hopper architecture, apply H100-specific optimizations
+            if is_hopper:
+                # Create a Hopper optimizer for additional tuning
+                hopper_optimizer = HopperOptimizer()
+                
+                # Get optimized dtype configuration for H100
+                dtype_config = hopper_optimizer.optimize_dtype_config()
+                
+                # Add Hopper-specific args to the optimization config
+                optimization_config.update(hopper_specific_args)
+                
+                logger.info("Applied H100 Hopper-specific optimizations")
+            
+            # Merge all configs
+            combined_config = {**gpu_config, **optimization_config, **tensorrt_config}
             
             # Initialize LLM with all optimizations
             llm = init_llm(
@@ -210,6 +292,23 @@ def get_llm(
                 max_tokens=max_tokens,
                 **combined_config
             )
+            
+            # Apply post-initialization optimizations if on Hopper
+            if is_hopper and hasattr(llm, "model"):
+                try:
+                    # Apply TensorRT optimization for inference if available
+                    if TENSORRT_AVAILABLE and settings.ENABLE_TENSORRT:
+                        # Get model name for caching
+                        model_name = model.replace("/", "_").replace("-", "_")
+                        
+                        # Apply TensorRT optimizations to the underlying model
+                        hopper_optimizer.optimize_inference(
+                            model=llm.model,
+                            model_name=model_name,
+                            input_shapes=input_shapes
+                        )
+                except Exception as e:
+                    logger.warning(f"Post-initialization optimization failed: {str(e)}")
             
             # Log configuration for debugging
             if settings.DEVELOPMENT_MODE:

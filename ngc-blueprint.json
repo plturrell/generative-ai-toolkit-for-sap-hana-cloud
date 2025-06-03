@@ -5,11 +5,11 @@
   "type": "model",
   "framework": "PyTorch",
   "platform": "Linux",
-  "os": "Ubuntu 20.04",
+  "os": "Ubuntu 22.04",
   "gpuType": "A100, H100",
-  "cudaVersion": "11.8",
+  "cudaVersion": "12.2",
   "licenses": ["Apache-2.0"],
-  "tags": ["SAP", "HANA", "GenerativeAI", "LLM", "GPU-Optimized"],
+  "tags": ["SAP", "HANA", "GenerativeAI", "LLM", "GPU-Optimized", "TensorRT", "Hopper-Optimized"],
   "resources": {
     "gpu": 1,
     "minGpuMemory": 16,
@@ -18,6 +18,26 @@
   },
   "hopper": {
     "optimized": true,
-    "features": ["FP8", "Transformer Engine", "Flash Attention 2", "FSDP"]
+    "features": ["FP8", "Transformer Engine", "Flash Attention 2", "FSDP", "TensorRT"]
+  },
+  "containerInfo": {
+    "registry": "nvcr.io",
+    "repository": "ea-sap/hana-ai-toolkit",
+    "runOptions": "--gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864",
+    "ports": [8000, 9090]
+  },
+  "documentation": {
+    "quick-start": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/README.md",
+    "user-guide": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NVIDIA.md"
+  },
+  "ngcRecommends": {
+    "containers": [
+      "nvcr.io/nvidia/tensorrt:24.03-py3",
+      "nvcr.io/nvidia/pytorch:24.03-py3"
+    ],
+    "models": [
+      "nvidia/text-generation",
+      "nvidia/embedding-models"
+    ]
   }
 }
