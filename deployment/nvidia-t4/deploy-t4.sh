@@ -14,7 +14,7 @@ fi
 # Check for required packages
 if ! python3 -c "import yaml" &> /dev/null; then
   echo "Warning: PyYAML package is missing. Installing it temporarily..."
-  python3 -m pip install --user pyyaml
+  python3 -m pip install --user pyyaml --break-system-packages || echo "Could not install PyYAML. Please install it manually: pip install pyyaml"
 fi
 
 # Check if T4 GPU is present

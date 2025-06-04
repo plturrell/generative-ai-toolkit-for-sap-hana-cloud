@@ -50,14 +50,29 @@ This will automatically detect your T4 GPU and generate optimized configurations
 
 ### 3. Deploy with Docker Compose
 
+#### Option 1: Direct Deployment
+
 ```bash
 cd deployment/nvidia-t4
 chmod +x deploy-t4.sh
 ./deploy-t4.sh
 ```
 
+#### Option 2: Using Virtual Environment (Recommended)
+
+This approach ensures all dependencies are properly installed in an isolated environment:
+
+```bash
+cd deployment/nvidia-t4
+chmod +x setup-venv.sh
+./setup-venv.sh
+source venv/bin/activate
+./deploy-t4.sh
+```
+
 The script will:
 - Verify T4 GPU availability
+- Install required dependencies
 - Build and start the containers with T4 optimizations
 - Set up monitoring with Prometheus and Grafana
 

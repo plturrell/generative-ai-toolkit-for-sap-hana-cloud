@@ -21,7 +21,7 @@ try:
 except ImportError:
     print("PyYAML not found. Attempting to install...")
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pyyaml"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pyyaml", "--break-system-packages"])
         import yaml
     except Exception as e:
         print(f"Error installing PyYAML: {e}")
