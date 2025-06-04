@@ -27,7 +27,8 @@ from .env_constants import (
     DEFAULT_TENSORRT_MAX_BATCH_SIZE,
     DEFAULT_TENSORRT_WORKSPACE_SIZE_MB,
     DEFAULT_TENSORRT_BUILDER_OPTIMIZATION_LEVEL,
-    ENABLE_TENSORRT
+    ENABLE_TENSORRT,
+    DEFAULT_CONFIG_DIR
 )
 
 class Settings(BaseSettings):
@@ -45,6 +46,9 @@ class Settings(BaseSettings):
     API_KEYS: List[str] = Field(
         default_factory=lambda: os.environ.get("API_KEYS", "").split(",") if os.environ.get("API_KEYS") else ["dev-key-only-for-testing"]
     )
+    ADMIN_API_KEYS: List[str] = Field(
+        default_factory=lambda: os.environ.get("ADMIN_API_KEYS", "").split(",") if os.environ.get("ADMIN_API_KEYS") else ["admin-key-only-for-testing"]
+    )
     AUTH_REQUIRED: bool = Field(default=True, env="AUTH_REQUIRED")
     # Default CORS to only allow SAP BTP domains
     CORS_ORIGINS: List[str] = Field(
@@ -58,6 +62,8 @@ class Settings(BaseSettings):
     )
     # Security boundary enforcement
     RESTRICT_EXTERNAL_CALLS: bool = Field(default=True, env="RESTRICT_EXTERNAL_CALLS")
+    # Configuration directory for storing settings
+    CONFIG_DIR: str = Field(default=DEFAULT_CONFIG_DIR, env="CONFIG_DIR")
     
     # Rate Limiting Settings
     RATE_LIMIT_PER_MINUTE: int = Field(default=DEFAULT_RATE_LIMIT, env="RATE_LIMIT_PER_MINUTE")
@@ -79,6 +85,13 @@ class Settings(BaseSettings):
     NVIDIA_VISIBLE_DEVICES: str = Field(default=DEFAULT_NVIDIA_VISIBLE_DEVICES, env="NVIDIA_VISIBLE_DEVICES")
     NVIDIA_DRIVER_CAPABILITIES: str = Field(default=DEFAULT_NVIDIA_DRIVER_CAPABILITIES, env="NVIDIA_DRIVER_CAPABILITIES")
     CUDA_MEMORY_FRACTION: float = Field(default=DEFAULT_GPU_MEMORY_FRACTION, env="CUDA_MEMORY_FRACTION")
+    
+    # Together.ai Integration Settings
+    ENABLE_TOGETHER_AI: bool = Field(default=False, env="ENABLE_TOGETHER_AI")
+    TOGETHER_API_KEY: str = Field(default="", env="TOGETHER_API_KEY")
+    TOGETHER_DEFAULT_MODEL: str = Field(default="meta-llama/Llama-2-70b-chat-hf", env="TOGETHER_DEFAULT_MODEL")
+    TOGETHER_DEFAULT_EMBEDDING_MODEL: str = Field(default="togethercomputer/m2-bert-80M-8k-retrieval", env="TOGETHER_DEFAULT_EMBEDDING_MODEL") 
+    TOGETHER_TIMEOUT: float = Field(default=60.0, env="TOGETHER_TIMEOUT")
     
     # NVIDIA GPU Optimization Settings - Advanced
     NVIDIA_CUDA_DEVICE_ORDER: str = Field(default="PCI_BUS_ID", env="NVIDIA_CUDA_DEVICE_ORDER")
