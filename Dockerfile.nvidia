@@ -1,0 +1,61 @@
+FROM nvcr.io/nvidia/cuda:12.3.0-devel-ubuntu22.04
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=UTC \
+    PYTHONPATH=/app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    libpq-dev \
+    curl \
+    wget \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up working directory
+WORKDIR /app
+
+# Copy requirements files
+COPY requirements.txt .
+COPY api/requirements.txt api/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r api/requirements.txt
+RUN pip install --no-cache-dir flash-attn --no-build-isolation
+
+# Install additional NVIDIA components for Hopper architecture
+RUN pip install --no-cache-dir nvidia-cuda-nvrtc-cu12 nvidia-cuda-runtime-cu12 nvidia-cuda-cupti-cu12 \
+    nvidia-cudnn-cu12 nvidia-cufft-cu12 nvidia-curand-cu12 nvidia-cusolver-cu12 \
+    nvidia-cusparse-cu12 nvidia-nccl-cu12 nvidia-nvtx-cu12 nvidia-nvjitlink-cu12
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 8000
+
+# Set environment variables for GPU optimization
+ENV ENABLE_GPU_ACCELERATION=true \
+    ENABLE_TENSORRT=true \
+    ENABLE_GPTQ=true \
+    ENABLE_AWQ=true \
+    QUANTIZATION_BIT_WIDTH=4 \
+    ENABLE_FP8=true \
+    ENABLE_FLASH_ATTENTION_2=true \
+    QUANTIZATION_CACHE_DIR=/tmp/quantization_cache \
+    CUDA_VISIBLE_DEVICES=0
+
+# Create cache directory
+RUN mkdir -p /tmp/quantization_cache && chmod 777 /tmp/quantization_cache
+
+# Command to run the application
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
