@@ -70,7 +70,7 @@
     "autoJobCancelation": true,
     "enabled": true
   },
-  "regions": ["fra1", "iad1"],
+  "regions": ["iad1"],
   "headers": [
     {
       "source": "/(.*)",
