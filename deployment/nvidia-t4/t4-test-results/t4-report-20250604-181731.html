@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVIDIA T4 Test Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 5px solid #76b900;
+        }
+        h1 {
+            margin: 0;
+            color: #76b900;
+        }
+        .summary {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .summary-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            flex-basis: 48%;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .summary-box h2 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+        .summary-box .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .pass {
+            color: #28a745;
+        }
+        .partial {
+            color: #ffc107;
+        }
+        .fail {
+            color: #dc3545;
+        }
+        .unknown {
+            color: #6c757d;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        table th {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NVIDIA T4 Automated Test Report</h1>
+            <p>Host: jupyter0-ipzl7zn0p.brevlab.com | Date: 2025-06-04 18:18:01</p>
+        </header>
+        
+        <div class="summary">
+            <div class="summary-box">
+                <h2>Overall Status</h2>
+                <div class="value">FAIL</div>
+            </div>
+            <div class="summary-box">
+                <h2>Summary</h2>
+                <div>Critical tests failed - see detailed results</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>GPU Details</h2>
+            <table>
+                <tr>
+                    <th>Test</th>
+                    <th>Result</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td>GPU Detection</td>
+                    <td></td>
+                    <td>UNKNOWN</td>
+                </tr>
+                <tr>
+                    <td>TensorRT Enabled</td>
+                    <td>UNKNOWN</td>
+                    <td>Precision: UNKNOWN</td>
+                </tr>
+                <tr>
+                    <td>GPU Utilization</td>
+                    <td>UNKNOWN%</td>
+                    <td>Memory: UNKNOWNMB | Temp: UNKNOWN°C | Power: UNKNOWNW</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>Monitoring</h2>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td>API</td>
+                    <td>FAIL</td>
+                    <td>Health endpoint: http://jupyter0-ipzl7zn0p.brevlab.com:8000/health</td>
+                </tr>
+                <tr>
+                    <td>Prometheus</td>
+                    <td>FAIL</td>
+                    <td>GPU Metrics: UNKNOWN</td>
+                </tr>
+                <tr>
+                    <td>Grafana</td>
+                    <td>FAIL</td>
+                    <td>GPU Dashboard: UNKNOWN</td>
+                </tr>
+                <tr>
+                    <td>GPU Metrics Exporter</td>
+                    <td>FAIL</td>
+                    <td>Endpoint: http://jupyter0-ipzl7zn0p.brevlab.com:9835/metrics</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>Recommendations</h2>
+            <ul>
+<li>Verify this is a T4 GPU instance</li>
+<li>Enable TensorRT for improved performance</li>
+<li>Configure TensorRT to use FP16 precision for optimal T4 performance</li>
+<li>Check Prometheus configuration for GPU metrics collection</li>
+<li>Configure Grafana with T4 GPU dashboards</li>
+<li>Check NVIDIA GPU metrics exporter service</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

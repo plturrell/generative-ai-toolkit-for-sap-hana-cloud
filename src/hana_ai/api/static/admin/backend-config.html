@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP HANA AI Toolkit - Backend Configuration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .backend-card {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            border-radius: 8px 8px 0 0 !important;
+            font-weight: bold;
+        }
+        .nvidia-card .card-header {
+            background-color: #76b900;
+            color: white;
+        }
+        .together-card .card-header {
+            background-color: #6610f2;
+            color: white;
+        }
+        .cpu-card .card-header {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .priority-card .card-header {
+            background-color: #fd7e14;
+            color: white;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            margin-left: 8px;
+        }
+        .auth-section {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>SAP HANA AI Toolkit - Backend Configuration</h1>
+        <p>Configure and manage GPU acceleration and backend selection options for the SAP HANA AI Toolkit.</p>
+        
+        <div class="auth-section">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Authentication</h5>
+                    <div class="mb-3">
+                        <label for="apiKey" class="form-label">Admin API Key</label>
+                        <input type="password" class="form-control" id="apiKey" placeholder="Enter admin API key">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="authButton">Authenticate</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="configSection" style="display: none;">
+            <div class="alert alert-primary" role="alert">
+                <span id="statusMessage">Loading backend configuration...</span>
+            </div>
+            
+            <!-- Status Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    Backend Status
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">NVIDIA</h5>
+                                    <span id="nvidiaStatus" class="badge rounded-pill text-bg-secondary">Unknown</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Together.ai</h5>
+                                    <span id="togetherAiStatus" class="badge rounded-pill text-bg-secondary">Unknown</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">CPU</h5>
+                                    <span id="cpuStatus" class="badge rounded-pill text-bg-secondary">Unknown</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-info" id="refreshStatusButton">Refresh Status</button>
+                        <button type="button" class="btn btn-sm btn-warning" id="reinitializeButton">Reinitialize Backends</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Priority Card -->
+            <div class="card priority-card backend-card">
+                <div class="card-header">
+                    Backend Priority and Failover
+                </div>
+                <div class="card-body">
+                    <form id="priorityForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="primaryBackend" class="form-label">Primary Backend</label>
+                                    <select class="form-select" id="primaryBackend">
+                                        <option value="auto">Auto (Best Available)</option>
+                                        <option value="nvidia">NVIDIA</option>
+                                        <option value="together_ai">Together.ai</option>
+                                        <option value="cpu">CPU</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="secondaryBackend" class="form-label">Secondary Backend (Failover)</label>
+                                    <select class="form-select" id="secondaryBackend">
+                                        <option value="">None</option>
+                                        <option value="auto">Auto (Best Available)</option>
+                                        <option value="nvidia">NVIDIA</option>
+                                        <option value="together_ai">Together.ai</option>
+                                        <option value="cpu">CPU</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="autoFailover">
+                                    <label class="form-check-label" for="autoFailover">Auto Failover</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="failoverAttempts" class="form-label">Failover Attempts</label>
+                                    <input type="number" class="form-control" id="failoverAttempts" min="1" max="10">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="failoverTimeout" class="form-label">Failover Timeout (seconds)</label>
+                                    <input type="number" class="form-control" id="failoverTimeout" min="1" max="60">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="loadBalancing">
+                                    <label class="form-check-label" for="loadBalancing">Load Balancing</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="loadRatio" class="form-label">Load Ratio (0.0-1.0)</label>
+                                    <input type="number" class="form-control" id="loadRatio" min="0" max="1" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="savePriorityButton">Save Priority Settings</button>
+                        <button type="button" class="btn btn-outline-secondary" id="testFailoverButton">Test Failover</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- NVIDIA Card -->
+            <div class="card nvidia-card backend-card">
+                <div class="card-header">
+                    NVIDIA GPU Backend
+                    <span id="nvidiaStatusBadge" class="badge bg-secondary status-badge">Unknown</span>
+                </div>
+                <div class="card-body">
+                    <form id="nvidiaForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="nvidiaEnabled">
+                                    <label class="form-check-label" for="nvidiaEnabled">Enable NVIDIA Backend</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="tensorrtEnabled">
+                                    <label class="form-check-label" for="tensorrtEnabled">Enable TensorRT</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="flashAttentionEnabled">
+                                    <label class="form-check-label" for="flashAttentionEnabled">Enable Flash Attention</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="transformerEngineEnabled">
+                                    <label class="form-check-label" for="transformerEngineEnabled">Enable Transformer Engine</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="fp8Enabled">
+                                    <label class="form-check-label" for="fp8Enabled">Enable FP8 Precision</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="gptqEnabled">
+                                    <label class="form-check-label" for="gptqEnabled">Enable GPTQ Quantization</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="awqEnabled">
+                                    <label class="form-check-label" for="awqEnabled">Enable AWQ Quantization</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quantMethod" class="form-label">Default Quantization Method</label>
+                                    <select class="form-select" id="quantMethod">
+                                        <option value="gptq">GPTQ</option>
+                                        <option value="awq">AWQ</option>
+                                        <option value="none">None</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="quantBitWidth" class="form-label">Quantization Bit Width</label>
+                                    <select class="form-select" id="quantBitWidth">
+                                        <option value="4">4-bit</option>
+                                        <option value="8">8-bit</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cudaMemoryFraction" class="form-label">CUDA Memory Fraction</label>
+                                    <input type="number" class="form-control" id="cudaMemoryFraction" min="0.1" max="1.0" step="0.05">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="multiGpuStrategy" class="form-label">Multi-GPU Strategy</label>
+                                    <select class="form-select" id="multiGpuStrategy">
+                                        <option value="auto">Auto</option>
+                                        <option value="tensor_parallel">Tensor Parallel</option>
+                                        <option value="pipeline_parallel">Pipeline Parallel</option>
+                                        <option value="fsdp">Fully Sharded Data Parallel</option>
+                                        <option value="ddp">Distributed Data Parallel</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="saveNvidiaButton">Save NVIDIA Settings</button>
+                        <button type="button" class="btn btn-outline-secondary" id="testNvidiaButton">Test NVIDIA</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Together.ai Card -->
+            <div class="card together-card backend-card">
+                <div class="card-header">
+                    Together.ai Cloud Backend
+                    <span id="togetherAiStatusBadge" class="badge bg-secondary status-badge">Unknown</span>
+                </div>
+                <div class="card-body">
+                    <form id="togetherAiForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="togetherAiEnabled">
+                                    <label class="form-check-label" for="togetherAiEnabled">Enable Together.ai Backend</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="togetherApiKey" class="form-label">API Key</label>
+                                    <input type="password" class="form-control" id="togetherApiKey">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="togetherDefaultModel" class="form-label">Default Model</label>
+                                    <input type="text" class="form-control" id="togetherDefaultModel">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="togetherDefaultEmbeddingModel" class="form-label">Default Embedding Model</label>
+                                    <input type="text" class="form-control" id="togetherDefaultEmbeddingModel">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="togetherTimeout" class="form-label">Timeout (seconds)</label>
+                                    <input type="number" class="form-control" id="togetherTimeout" min="1" max="300">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="togetherEndpointUrl" class="form-label">Dedicated Endpoint URL (Optional)</label>
+                                    <input type="text" class="form-control" id="togetherEndpointUrl">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="togetherMaxRetries" class="form-label">Max Retries</label>
+                                    <input type="number" class="form-control" id="togetherMaxRetries" min="0" max="10">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="saveTogetherAiButton">Save Together.ai Settings</button>
+                        <button type="button" class="btn btn-outline-secondary" id="testTogetherAiButton">Test Together.ai</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- CPU Card -->
+            <div class="card cpu-card backend-card">
+                <div class="card-header">
+                    CPU Backend
+                    <span id="cpuStatusBadge" class="badge bg-secondary status-badge">Unknown</span>
+                </div>
+                <div class="card-body">
+                    <form id="cpuForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="cpuEnabled">
+                                    <label class="form-check-label" for="cpuEnabled">Enable CPU Backend</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cpuDefaultModel" class="form-label">Default Model</label>
+                                    <input type="text" class="form-control" id="cpuDefaultModel">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cpuDefaultEmbeddingModel" class="form-label">Default Embedding Model</label>
+                                    <input type="text" class="form-control" id="cpuDefaultEmbeddingModel">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="cpuNumThreads" class="form-label">Number of Threads</label>
+                                    <input type="number" class="form-control" id="cpuNumThreads" min="1" max="64">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cpuContextSize" class="form-label">Context Size</label>
+                                    <input type="number" class="form-control" id="cpuContextSize" min="512" max="8192">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="saveCpuButton">Save CPU Settings</button>
+                        <button type="button" class="btn btn-outline-secondary" id="testCpuButton">Test CPU</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test Result Modal -->
+    <div class="modal fade" id="testResultModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="testResultTitle">Test Result</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="testResultContent" style="white-space: pre-wrap;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API endpoints
+        const API_BASE = '/api/v1/backend';
+        let apiKey = '';
+        let testResultModal;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Bootstrap components
+            testResultModal = new bootstrap.Modal(document.getElementById('testResultModal'));
+            
+            // Set up event listeners
+            document.getElementById('authButton').addEventListener('click', authenticate);
+            document.getElementById('refreshStatusButton').addEventListener('click', refreshStatus);
+            document.getElementById('reinitializeButton').addEventListener('click', reinitializeBackends);
+            document.getElementById('savePriorityButton').addEventListener('click', savePrioritySettings);
+            document.getElementById('saveNvidiaButton').addEventListener('click', saveNvidiaSettings);
+            document.getElementById('saveTogetherAiButton').addEventListener('click', saveTogetherAiSettings);
+            document.getElementById('saveCpuButton').addEventListener('click', saveCpuSettings);
+            document.getElementById('testNvidiaButton').addEventListener('click', testNvidia);
+            document.getElementById('testTogetherAiButton').addEventListener('click', testTogetherAi);
+            document.getElementById('testCpuButton').addEventListener('click', testCpu);
+            document.getElementById('testFailoverButton').addEventListener('click', testFailover);
+            
+            // Check for stored API key
+            const storedApiKey = localStorage.getItem('hana_ai_admin_key');
+            if (storedApiKey) {
+                document.getElementById('apiKey').value = storedApiKey;
+                apiKey = storedApiKey;
+                showConfigSection();
+                loadBackendConfig();
+                refreshStatus();
+            }
+        });
+        
+        function authenticate() {
+            apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert('Please enter an API key');
+                return;
+            }
+            
+            // Save API key in local storage
+            localStorage.setItem('hana_ai_admin_key', apiKey);
+            
+            // Show config section and load data
+            showConfigSection();
+            loadBackendConfig();
+            refreshStatus();
+        }
+        
+        function showConfigSection() {
+            document.getElementById('configSection').style.display = 'block';
+        }
+        
+        async function loadBackendConfig() {
+            setStatusMessage('Loading backend configuration...');
+            try {
+                const response = await fetch(`${API_BASE}`, {
+                    headers: { 'X-API-Key': apiKey }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const config = await response.json();
+                console.log('Backend config:', config);
+                
+                // Fill in the forms with the config values
+                fillPriorityForm(config.priority);
+                fillNvidiaForm(config.nvidia);
+                fillTogetherAiForm(config.together_ai);
+                fillCpuForm(config.cpu);
+                
+                setStatusMessage('Backend configuration loaded successfully');
+            } catch (error) {
+                console.error('Error loading backend config:', error);
+                setStatusMessage(`Error loading backend configuration: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function refreshStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const status = await response.json();
+                console.log('Backend status:', status);
+                
+                // Update status badges
+                updateStatusBadges(status);
+                
+                setStatusMessage('Backend status refreshed successfully');
+            } catch (error) {
+                console.error('Error refreshing status:', error);
+                setStatusMessage(`Error refreshing status: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function reinitializeBackends() {
+            setStatusMessage('Reinitializing backends...');
+            try {
+                const response = await fetch(`${API_BASE}/reinitialize`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': apiKey }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Reinitialization result:', result);
+                
+                // Update status badges
+                updateStatusBadges(result);
+                
+                setStatusMessage('Backends reinitialized successfully');
+            } catch (error) {
+                console.error('Error reinitializing backends:', error);
+                setStatusMessage(`Error reinitializing backends: ${error.message}`, 'danger');
+            }
+        }
+        
+        function updateStatusBadges(status) {
+            // Update main status badges
+            const backends = status.backends || {};
+            
+            // NVIDIA
+            const nvidiaStatus = backends.nvidia?.status || 'unknown';
+            const nvidiaElement = document.getElementById('nvidiaStatus');
+            const nvidiaBadgeElement = document.getElementById('nvidiaStatusBadge');
+            updateStatusBadge(nvidiaElement, nvidiaStatus);
+            updateStatusBadge(nvidiaBadgeElement, nvidiaStatus);
+            
+            // Together.ai
+            const togetherStatus = backends.together_ai?.status || 'unknown';
+            const togetherElement = document.getElementById('togetherAiStatus');
+            const togetherBadgeElement = document.getElementById('togetherAiStatusBadge');
+            updateStatusBadge(togetherElement, togetherStatus);
+            updateStatusBadge(togetherBadgeElement, togetherStatus);
+            
+            // CPU
+            const cpuStatus = backends.cpu?.status || 'unknown';
+            const cpuElement = document.getElementById('cpuStatus');
+            const cpuBadgeElement = document.getElementById('cpuStatusBadge');
+            updateStatusBadge(cpuElement, cpuStatus);
+            updateStatusBadge(cpuBadgeElement, cpuStatus);
+        }
+        
+        function updateStatusBadge(element, status) {
+            if (!element) return;
+            
+            // Remove existing classes
+            element.classList.remove('text-bg-success', 'text-bg-warning', 'text-bg-danger', 'text-bg-secondary');
+            
+            // Add appropriate class and text
+            switch (status) {
+                case 'available':
+                    element.classList.add('text-bg-success');
+                    element.textContent = 'Available';
+                    break;
+                case 'unavailable':
+                    element.classList.add('text-bg-danger');
+                    element.textContent = 'Unavailable';
+                    break;
+                case 'unknown':
+                default:
+                    element.classList.add('text-bg-secondary');
+                    element.textContent = 'Unknown';
+                    break;
+            }
+        }
+        
+        function fillPriorityForm(priority) {
+            document.getElementById('primaryBackend').value = priority.primary;
+            document.getElementById('secondaryBackend').value = priority.secondary || '';
+            document.getElementById('autoFailover').checked = priority.auto_failover;
+            document.getElementById('failoverAttempts').value = priority.failover_attempts;
+            document.getElementById('failoverTimeout').value = priority.failover_timeout;
+            document.getElementById('loadBalancing').checked = priority.load_balancing;
+            document.getElementById('loadRatio').value = priority.load_ratio;
+        }
+        
+        function fillNvidiaForm(nvidia) {
+            document.getElementById('nvidiaEnabled').checked = nvidia.enabled;
+            document.getElementById('tensorrtEnabled').checked = nvidia.enable_tensorrt;
+            document.getElementById('flashAttentionEnabled').checked = nvidia.enable_flash_attention;
+            document.getElementById('transformerEngineEnabled').checked = nvidia.enable_transformer_engine;
+            document.getElementById('fp8Enabled').checked = nvidia.enable_fp8;
+            document.getElementById('gptqEnabled').checked = nvidia.enable_gptq;
+            document.getElementById('awqEnabled').checked = nvidia.enable_awq;
+            document.getElementById('quantMethod').value = nvidia.default_quant_method;
+            document.getElementById('quantBitWidth').value = nvidia.quantization_bit_width;
+            document.getElementById('cudaMemoryFraction').value = nvidia.cuda_memory_fraction;
+            document.getElementById('multiGpuStrategy').value = nvidia.multi_gpu_strategy;
+        }
+        
+        function fillTogetherAiForm(together_ai) {
+            document.getElementById('togetherAiEnabled').checked = together_ai.enabled;
+            // Don't fill API key for security reasons unless it's masked
+            if (together_ai.api_key && together_ai.api_key.startsWith('*')) {
+                document.getElementById('togetherApiKey').value = together_ai.api_key;
+            }
+            document.getElementById('togetherDefaultModel').value = together_ai.default_model;
+            document.getElementById('togetherDefaultEmbeddingModel').value = together_ai.default_embedding_model;
+            document.getElementById('togetherTimeout').value = together_ai.timeout;
+            document.getElementById('togetherEndpointUrl').value = together_ai.endpoint_url || '';
+            document.getElementById('togetherMaxRetries').value = together_ai.max_retries;
+        }
+        
+        function fillCpuForm(cpu) {
+            document.getElementById('cpuEnabled').checked = cpu.enabled;
+            document.getElementById('cpuDefaultModel').value = cpu.default_model;
+            document.getElementById('cpuDefaultEmbeddingModel').value = cpu.default_embedding_model;
+            document.getElementById('cpuNumThreads').value = cpu.num_threads;
+            document.getElementById('cpuContextSize').value = cpu.context_size;
+        }
+        
+        function getPriorityFormData() {
+            return {
+                primary: document.getElementById('primaryBackend').value,
+                secondary: document.getElementById('secondaryBackend').value || null,
+                auto_failover: document.getElementById('autoFailover').checked,
+                failover_attempts: parseInt(document.getElementById('failoverAttempts').value),
+                failover_timeout: parseFloat(document.getElementById('failoverTimeout').value),
+                load_balancing: document.getElementById('loadBalancing').checked,
+                load_ratio: parseFloat(document.getElementById('loadRatio').value)
+            };
+        }
+        
+        function getNvidiaFormData() {
+            return {
+                enabled: document.getElementById('nvidiaEnabled').checked,
+                enable_tensorrt: document.getElementById('tensorrtEnabled').checked,
+                enable_flash_attention: document.getElementById('flashAttentionEnabled').checked,
+                enable_transformer_engine: document.getElementById('transformerEngineEnabled').checked,
+                enable_fp8: document.getElementById('fp8Enabled').checked,
+                enable_gptq: document.getElementById('gptqEnabled').checked,
+                enable_awq: document.getElementById('awqEnabled').checked,
+                default_quant_method: document.getElementById('quantMethod').value,
+                quantization_bit_width: parseInt(document.getElementById('quantBitWidth').value),
+                cuda_memory_fraction: parseFloat(document.getElementById('cudaMemoryFraction').value),
+                multi_gpu_strategy: document.getElementById('multiGpuStrategy').value
+            };
+        }
+        
+        function getTogetherAiFormData() {
+            const apiKey = document.getElementById('togetherApiKey').value;
+            return {
+                enabled: document.getElementById('togetherAiEnabled').checked,
+                api_key: apiKey,
+                default_model: document.getElementById('togetherDefaultModel').value,
+                default_embedding_model: document.getElementById('togetherDefaultEmbeddingModel').value,
+                timeout: parseFloat(document.getElementById('togetherTimeout').value),
+                endpoint_url: document.getElementById('togetherEndpointUrl').value || null,
+                max_retries: parseInt(document.getElementById('togetherMaxRetries').value)
+            };
+        }
+        
+        function getCpuFormData() {
+            return {
+                enabled: document.getElementById('cpuEnabled').checked,
+                default_model: document.getElementById('cpuDefaultModel').value,
+                default_embedding_model: document.getElementById('cpuDefaultEmbeddingModel').value,
+                num_threads: parseInt(document.getElementById('cpuNumThreads').value),
+                context_size: parseInt(document.getElementById('cpuContextSize').value)
+            };
+        }
+        
+        async function savePrioritySettings() {
+            setStatusMessage('Saving priority settings...');
+            try {
+                const data = getPriorityFormData();
+                
+                const response = await fetch(`${API_BASE}/priority`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Priority settings saved:', result);
+                
+                setStatusMessage('Priority settings saved successfully');
+                refreshStatus();
+            } catch (error) {
+                console.error('Error saving priority settings:', error);
+                setStatusMessage(`Error saving priority settings: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function saveNvidiaSettings() {
+            setStatusMessage('Saving NVIDIA settings...');
+            try {
+                const data = getNvidiaFormData();
+                
+                const response = await fetch(`${API_BASE}/nvidia`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('NVIDIA settings saved:', result);
+                
+                setStatusMessage('NVIDIA settings saved successfully');
+                refreshStatus();
+            } catch (error) {
+                console.error('Error saving NVIDIA settings:', error);
+                setStatusMessage(`Error saving NVIDIA settings: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function saveTogetherAiSettings() {
+            setStatusMessage('Saving Together.ai settings...');
+            try {
+                const data = getTogetherAiFormData();
+                
+                const response = await fetch(`${API_BASE}/together-ai`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('Together.ai settings saved:', result);
+                
+                setStatusMessage('Together.ai settings saved successfully');
+                refreshStatus();
+            } catch (error) {
+                console.error('Error saving Together.ai settings:', error);
+                setStatusMessage(`Error saving Together.ai settings: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function saveCpuSettings() {
+            setStatusMessage('Saving CPU settings...');
+            try {
+                const data = getCpuFormData();
+                
+                const response = await fetch(`${API_BASE}/cpu`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('CPU settings saved:', result);
+                
+                setStatusMessage('CPU settings saved successfully');
+                refreshStatus();
+            } catch (error) {
+                console.error('Error saving CPU settings:', error);
+                setStatusMessage(`Error saving CPU settings: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function testNvidia() {
+            setStatusMessage('Testing NVIDIA backend...');
+            try {
+                const response = await fetch(`${API_BASE}/test/nvidia`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': apiKey }
+                });
+                
+                const result = await response.json();
+                console.log('NVIDIA test result:', result);
+                
+                // Show the result in a modal
+                showTestResult('NVIDIA Test Result', result);
+                
+                setStatusMessage(`NVIDIA test completed with status: ${result.status}`);
+                refreshStatus();
+            } catch (error) {
+                console.error('Error testing NVIDIA backend:', error);
+                setStatusMessage(`Error testing NVIDIA backend: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function testTogetherAi() {
+            setStatusMessage('Testing Together.ai backend...');
+            try {
+                const response = await fetch(`${API_BASE}/test/together-ai`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': apiKey }
+                });
+                
+                const result = await response.json();
+                console.log('Together.ai test result:', result);
+                
+                // Show the result in a modal
+                showTestResult('Together.ai Test Result', result);
+                
+                setStatusMessage(`Together.ai test completed with status: ${result.status}`);
+                refreshStatus();
+            } catch (error) {
+                console.error('Error testing Together.ai backend:', error);
+                setStatusMessage(`Error testing Together.ai backend: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function testCpu() {
+            setStatusMessage('Testing CPU backend...');
+            try {
+                const response = await fetch(`${API_BASE}/test/cpu`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': apiKey }
+                });
+                
+                const result = await response.json();
+                console.log('CPU test result:', result);
+                
+                // Show the result in a modal
+                showTestResult('CPU Test Result', result);
+                
+                setStatusMessage(`CPU test completed with status: ${result.status}`);
+                refreshStatus();
+            } catch (error) {
+                console.error('Error testing CPU backend:', error);
+                setStatusMessage(`Error testing CPU backend: ${error.message}`, 'danger');
+            }
+        }
+        
+        async function testFailover() {
+            setStatusMessage('Testing backend failover...');
+            try {
+                const response = await fetch(`${API_BASE}/test/failover`, {
+                    method: 'POST',
+                    headers: { 'X-API-Key': apiKey }
+                });
+                
+                const result = await response.json();
+                console.log('Failover test result:', result);
+                
+                // Show the result in a modal
+                showTestResult('Failover Test Result', result);
+                
+                setStatusMessage(`Failover test completed with status: ${result.status}`);
+                refreshStatus();
+            } catch (error) {
+                console.error('Error testing failover:', error);
+                setStatusMessage(`Error testing failover: ${error.message}`, 'danger');
+            }
+        }
+        
+        function showTestResult(title, result) {
+            document.getElementById('testResultTitle').textContent = title;
+            document.getElementById('testResultContent').textContent = JSON.stringify(result, null, 2);
+            testResultModal.show();
+        }
+        
+        function setStatusMessage(message, type = 'primary') {
+            const statusElement = document.getElementById('statusMessage');
+            statusElement.textContent = message;
+            
+            // Update alert type
+            const alertElement = statusElement.parentElement;
+            alertElement.className = `alert alert-${type} role="alert"`;
+        }
+    </script>
+</body>
+</html>

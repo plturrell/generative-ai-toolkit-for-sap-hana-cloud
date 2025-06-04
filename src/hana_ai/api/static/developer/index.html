@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Studio - SAP HANA AI Toolkit</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/reactflow@11.7.4/dist/style.css">
+    <link rel="stylesheet" href="css/developer-studio.css">
+    <link rel="icon" type="image/png" href="../favicon.ico">
+</head>
+<body>
+    <div class="developer-studio">
+        <!-- Header -->
+        <header class="developer-header">
+            <div class="developer-logo">
+                <img src="../img/sap-logo-white.svg" alt="SAP Logo">
+                <span>HANA AI Toolkit Developer Studio</span>
+            </div>
+            <div class="developer-nav">
+                <div class="developer-nav-item" id="btn-new-flow">
+                    <i class="fas fa-plus"></i>
+                    <span>New Flow</span>
+                </div>
+                <div class="developer-nav-item" id="btn-open-flow">
+                    <i class="fas fa-folder-open"></i>
+                    <span>Open</span>
+                </div>
+                <div class="developer-nav-item" id="btn-dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="developer-nav-item" id="btn-help">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Help</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <div class="developer-content">
+            <!-- Left sidebar - Navigator -->
+            <div class="developer-navigator">
+                <div class="navigator-header">
+                    Project Explorer
+                </div>
+                <div class="navigator-content">
+                    <div class="navigator-group">
+                        <div class="navigator-group-title">Flows</div>
+                        <div class="navigator-item active">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Customer Analysis</span>
+                        </div>
+                        <div class="navigator-item">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Sales Forecast</span>
+                        </div>
+                        <div class="navigator-item">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Product Inventory</span>
+                        </div>
+                    </div>
+                    <div class="navigator-group">
+                        <div class="navigator-group-title">Data Sources</div>
+                        <div class="navigator-item">
+                            <i class="fas fa-database"></i>
+                            <span>CUSTOMERS</span>
+                        </div>
+                        <div class="navigator-item">
+                            <i class="fas fa-database"></i>
+                            <span>ORDERS</span>
+                        </div>
+                        <div class="navigator-item">
+                            <i class="fas fa-database"></i>
+                            <span>PRODUCTS</span>
+                        </div>
+                    </div>
+                    <div class="navigator-group">
+                        <div class="navigator-group-title">Models</div>
+                        <div class="navigator-item">
+                            <i class="fas fa-brain"></i>
+                            <span>Sales Prediction</span>
+                        </div>
+                        <div class="navigator-item">
+                            <i class="fas fa-brain"></i>
+                            <span>Customer Segmentation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main workspace -->
+            <div class="developer-workspace">
+                <!-- Workspace tabs -->
+                <div class="workspace-tabs">
+                    <div class="workspace-tab active">
+                        Flow Builder <span class="tab-close">×</span>
+                    </div>
+                    <div class="workspace-tab">
+                        Code Editor <span class="tab-close">×</span>
+                    </div>
+                </div>
+
+                <!-- Workspace content -->
+                <div class="workspace-content">
+                    <!-- Flow Builder -->
+                    <div id="flow-builder" class="flow-builder-container">
+                        <!-- This will be populated by the FlowBuilder class -->
+                    </div>
+
+                    <!-- Code Editor (initially hidden) -->
+                    <div id="code-editor-container" class="code-editor-container" style="display: none;">
+                        <div class="code-editor-header">
+                            <div class="editor-title">
+                                Generated Code
+                            </div>
+                            <div class="editor-actions">
+                                <button class="btn-format" title="Format Code">
+                                    <i class="fas fa-indent"></i>
+                                </button>
+                                <button class="btn-theme" title="Toggle Theme">
+                                    <i class="fas fa-moon"></i>
+                                </button>
+                                <button class="btn-execute" title="Execute Code">
+                                    <i class="fas fa-play"></i>
+                                    <span>Execute</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="code-editor-content">
+                            <div id="monaco-editor" class="monaco-editor-container"></div>
+                        </div>
+                        <div class="code-editor-footer">
+                            <div class="cursor-position">Ln 1, Col 1</div>
+                            <div class="editor-language">Python</div>
+                        </div>
+
+                        <!-- Results panel -->
+                        <div class="results-panel">
+                            <div class="results-panel-header">
+                                <div class="results-panel-tabs">
+                                    <div class="results-panel-tab active">Output</div>
+                                    <div class="results-panel-tab">Data View</div>
+                                </div>
+                                <div class="results-panel-actions">
+                                    <button class="btn-clear" title="Clear Results">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="btn-expand" title="Expand Panel">
+                                        <i class="fas fa-expand-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="results-panel-content">
+                                # Execution results will appear here
+                            </div>
+                            <!-- Data View (initially hidden) -->
+                            <div class="results-panel-content data-table-container" style="display: none;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>1</td>
+                                            <td>Example</td>
+                                            <td>100</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load React and Related Libraries -->
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+    <script src="https://unpkg.com/reactflow@11.7.4/dist/umd/index.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Load Custom Scripts -->
+    <script src="js/error-handler.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/flow-validator.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/ai-integration.js"></script>
+    <script src="js/flow-builder.js"></script>
+    <script src="js/monaco-integration.js"></script>
+    <script src="js/developer-studio.js"></script>
+    
+    <!-- Load React Components -->
+    <script type="text/babel" src="js/react-components.js"></script>
+    <script type="text/babel" src="js/component-showcase.js"></script>
+    <script type="text/babel" src="js/dashboard-builder.js"></script>
+
+    <!-- Initialize application -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Initialize API client
+                const apiClient = new APIClient({
+                    baseUrl: window.location.origin,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // Initialize AI integration
+                const aiIntegration = new AIIntegration(apiClient);
+
+                // Initialize Flow Builder
+                const flowBuilder = new FlowBuilder(
+                    'flow-builder',
+                    apiClient,
+                    aiIntegration
+                );
+                await flowBuilder.initialize();
+
+                // Initialize Monaco Editor
+                const monacoIntegration = new MonacoIntegration('monaco-editor');
+                await monacoIntegration.initialize({
+                    language: 'python',
+                    theme: 'vs-dark'
+                });
+
+                // Initialize Developer Studio
+                const developerStudio = new DeveloperStudio(
+                    apiClient,
+                    aiIntegration,
+                    flowBuilder,
+                    monacoIntegration
+                );
+                developerStudio.initialize();
+
+                // Handle tab switching
+                const tabs = document.querySelectorAll('.workspace-tab');
+                tabs.forEach((tab, index) => {
+                    tab.addEventListener('click', () => {
+                        // Deactivate all tabs
+                        tabs.forEach(t => t.classList.remove('active'));
+                        
+                        // Activate clicked tab
+                        tab.classList.add('active');
+                        
+                        // Show corresponding content
+                        const flowBuilder = document.getElementById('flow-builder');
+                        const codeEditor = document.getElementById('code-editor-container');
+                        
+                        if (index === 0) {
+                            // Show Flow Builder
+                            flowBuilder.style.display = 'flex';
+                            codeEditor.style.display = 'none';
+                        } else {
+                            // Show Code Editor
+                            flowBuilder.style.display = 'none';
+                            codeEditor.style.display = 'flex';
+                            
+                            // Trigger layout update for Monaco
+                            window.setTimeout(() => {
+                                monacoIntegration.editor.layout();
+                            }, 10);
+                        }
+                    });
+                });
+
+                // Handle dashboard button
+                const dashboardBtn = document.getElementById('btn-dashboard');
+                if (dashboardBtn) {
+                    dashboardBtn.addEventListener('click', () => {
+                        window.location.href = 'dashboard.html';
+                    });
+                }
+
+                // Handle results panel tabs
+                const resultsTabs = document.querySelectorAll('.results-panel-tab');
+                const resultsContents = document.querySelectorAll('.results-panel-content');
+                
+                resultsTabs.forEach((tab, index) => {
+                    tab.addEventListener('click', () => {
+                        // Deactivate all tabs
+                        resultsTabs.forEach(t => t.classList.remove('active'));
+                        
+                        // Activate clicked tab
+                        tab.classList.add('active');
+                        
+                        // Hide all content
+                        resultsContents.forEach(c => c.style.display = 'none');
+                        
+                        // Show corresponding content
+                        resultsContents[index].style.display = 'block';
+                    });
+                });
+
+                // Handle code editor actions
+                const formatButton = document.querySelector('.btn-format');
+                if (formatButton) {
+                    formatButton.addEventListener('click', () => {
+                        monacoIntegration.formatCode();
+                    });
+                }
+                
+                const themeButton = document.querySelector('.btn-theme');
+                if (themeButton) {
+                    themeButton.addEventListener('click', () => {
+                        const currentTheme = monacoIntegration.theme;
+                        const newTheme = currentTheme === 'vs-dark' ? 'vs-light' : 'vs-dark';
+                        monacoIntegration.setTheme(newTheme);
+                        
+                        // Update icon
+                        const icon = themeButton.querySelector('i');
+                        if (icon) {
+                            icon.className = newTheme === 'vs-dark' ? 'fas fa-moon' : 'fas fa-sun';
+                        }
+                    });
+                }
+                
+                const executeButton = document.querySelector('.btn-execute');
+                if (executeButton) {
+                    executeButton.addEventListener('click', async () => {
+                        try {
+                            // Get current code
+                            const code = monacoIntegration.getCode();
+                            
+                            // Execute code
+                            const result = await aiIntegration.executeCode(code);
+                            
+                            // Display result
+                            const resultPanel = document.querySelector('.results-panel-content');
+                            if (resultPanel) {
+                                resultPanel.textContent = result.output;
+                                
+                                // Set class based on success/failure
+                                resultPanel.className = 'results-panel-content';
+                                if (!result.success) {
+                                    resultPanel.classList.add('error');
+                                }
+                            }
+                        } catch (error) {
+                            const resultPanel = document.querySelector('.results-panel-content');
+                            if (resultPanel) {
+                                resultPanel.textContent = `Error: ${error.message}`;
+                                resultPanel.className = 'results-panel-content error';
+                            }
+                            console.error('Error executing code:', error);
+                        }
+                    });
+                }
+                
+                // Handle clear results
+                const clearButton = document.querySelector('.btn-clear');
+                if (clearButton) {
+                    clearButton.addEventListener('click', () => {
+                        const resultPanel = document.querySelector('.results-panel-content');
+                        if (resultPanel) {
+                            resultPanel.textContent = '# Execution results will appear here';
+                            resultPanel.className = 'results-panel-content';
+                        }
+                    });
+                }
+                
+                // Handle expand results
+                const expandButton = document.querySelector('.btn-expand');
+                if (expandButton) {
+                    expandButton.addEventListener('click', () => {
+                        const resultsPanel = document.querySelector('.results-panel');
+                        if (resultsPanel) {
+                            const isExpanded = resultsPanel.style.height === '400px';
+                            resultsPanel.style.height = isExpanded ? '200px' : '400px';
+                            
+                            // Update icon
+                            const icon = expandButton.querySelector('i');
+                            if (icon) {
+                                icon.className = isExpanded ? 'fas fa-expand-alt' : 'fas fa-compress-alt';
+                            }
+                        }
+                    });
+                }
+
+                // Update cursor position in status bar
+                monacoIntegration.addEventListener('cursorPositionChanged', (position) => {
+                    const cursorPosition = document.querySelector('.cursor-position');
+                    if (cursorPosition) {
+                        cursorPosition.textContent = `Ln ${position.lineNumber}, Col ${position.column}`;
+                    }
+                });
+
+                // Handle flow generation
+                flowBuilder.addEventListener('codeGenerated', (generationResponse) => {
+                    // Switch to code editor tab
+                    tabs[1].click();
+                    
+                    // Set generated code in Monaco editor
+                    monacoIntegration.setCode(generationResponse.code, true);
+                });
+
+                // Handle flow execution
+                flowBuilder.addEventListener('codeExecuted', (executionResponse) => {
+                    // Switch to code editor tab
+                    tabs[1].click();
+                    
+                    // Display result
+                    const resultPanel = document.querySelector('.results-panel-content');
+                    if (resultPanel) {
+                        resultPanel.textContent = executionResponse.output;
+                        
+                        // Set class based on success/failure
+                        resultPanel.className = 'results-panel-content';
+                        if (!executionResponse.success) {
+                            resultPanel.classList.add('error');
+                        }
+                    }
+                });
+
+                console.log('Developer Studio initialized successfully');
+                
+                // Initialize Component Showcase
+                try {
+                    const componentShowcase = new ComponentShowcase();
+                    componentShowcase.initialize();
+                    console.log('Component Showcase initialized successfully');
+                } catch (showcaseError) {
+                    console.error('Failed to initialize Component Showcase:', showcaseError);
+                }
+            } catch (error) {
+                console.error('Failed to initialize Developer Studio:', error);
+                alert(`Failed to initialize Developer Studio: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,988 @@
+/**
+ * Developer Studio CSS
+ *
+ * Styles for the visual development environment.
+ */
+
+:root {
+  /* SAP Color palette */
+  --sap-blue: #0a6ed1;
+  --sap-blue-light: #d1e8ff;
+  --sap-blue-dark: #0854a0;
+  --sap-green: #107e3e;
+  --sap-green-light: #ebebeb;
+  --sap-red: #b00;
+  --sap-red-light: #ffebeb;
+  --sap-orange: #e9730c;
+  --sap-orange-light: #fff8d6;
+  --sap-gray: #6a6d70;
+  --sap-gray-light: #f7f7f7;
+  --sap-gray-dark: #32363a;
+  --sap-border: #ddd;
+  --sap-text: #32363a;
+  --sap-text-light: #6a6d70;
+  
+  /* Dimensions */
+  --header-height: 60px;
+  --footer-height: 30px;
+  --palette-width: 240px;
+  --properties-width: 300px;
+  --border-radius: 4px;
+}
+
+/* Base styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: "72", "72full", Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--sap-text);
+  background-color: #fff;
+  height: 100%;
+  overflow: hidden;
+}
+
+.developer-studio {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Header */
+.developer-header {
+  height: var(--header-height);
+  background-color: var(--sap-blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.developer-logo {
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.developer-logo img {
+  height: 36px;
+  margin-right: 10px;
+}
+
+.developer-nav {
+  display: flex;
+  align-items: center;
+}
+
+.developer-nav-item {
+  margin-left: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.developer-nav-item i {
+  margin-right: 5px;
+}
+
+/* Main content */
+.developer-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left sidebar - Navigator */
+.developer-navigator {
+  width: 240px;
+  background-color: var(--sap-gray-light);
+  border-right: 1px solid var(--sap-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.navigator-header {
+  padding: 15px;
+  font-weight: bold;
+  border-bottom: 1px solid var(--sap-border);
+}
+
+.navigator-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.navigator-item {
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.navigator-item:hover {
+  background-color: rgba(10, 110, 209, 0.1);
+}
+
+.navigator-item.active {
+  background-color: var(--sap-blue-light);
+  color: var(--sap-blue-dark);
+  font-weight: 500;
+}
+
+.navigator-item i {
+  margin-right: 8px;
+  font-size: 16px;
+  color: var(--sap-gray);
+}
+
+.navigator-item.active i {
+  color: var(--sap-blue);
+}
+
+.navigator-group {
+  margin-bottom: 15px;
+}
+
+.navigator-group-title {
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--sap-text-light);
+  margin-bottom: 5px;
+  padding: 0 10px;
+}
+
+/* Main workspace */
+.developer-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Workspace tabs */
+.workspace-tabs {
+  height: 40px;
+  background-color: var(--sap-gray-light);
+  border-bottom: 1px solid var(--sap-border);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.workspace-tab {
+  padding: 0 15px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--sap-border);
+  cursor: pointer;
+  position: relative;
+}
+
+.workspace-tab.active {
+  background-color: white;
+  border-bottom: 2px solid var(--sap-blue);
+}
+
+.workspace-tab .tab-close {
+  margin-left: 8px;
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+.workspace-tab:hover .tab-close {
+  opacity: 1;
+}
+
+/* Workspace content */
+.workspace-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Flow builder */
+.flow-builder-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.node-palette {
+  width: var(--palette-width);
+  background-color: var(--sap-gray-light);
+  border-right: 1px solid var(--sap-border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.node-palette h3 {
+  padding: 15px;
+  margin: 0;
+  border-bottom: 1px solid var(--sap-border);
+  font-size: 16px;
+}
+
+.node-categories {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.node-category {
+  margin-bottom: 15px;
+}
+
+.node-category h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--sap-text-light);
+}
+
+.node-item {
+  background-color: white;
+  border: 1px solid var(--sap-border);
+  border-radius: var(--border-radius);
+  padding: 8px;
+  margin-bottom: 8px;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.node-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: var(--sap-blue);
+}
+
+.node-item-header {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.node-item-description {
+  font-size: 12px;
+  color: var(--sap-text-light);
+}
+
+.react-flow-container {
+  flex: 1;
+  position: relative;
+  background-color: white;
+  overflow: hidden;
+}
+
+.react-flow-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--sap-text-light);
+  font-size: 16px;
+}
+
+.flow-builder-header {
+  height: 50px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sap-border);
+  background-color: white;
+}
+
+.flow-title-container {
+  display: flex;
+  align-items: center;
+}
+
+.flow-title {
+  font-size: 18px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius);
+  margin-right: 10px;
+}
+
+.flow-title:hover, .flow-title:focus {
+  border-color: var(--sap-border);
+  outline: none;
+}
+
+.flow-actions {
+  display: flex;
+  align-items: center;
+}
+
+.flow-actions button, .flow-title-container button {
+  background: none;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  color: var(--sap-text);
+}
+
+.flow-actions button:hover, .flow-title-container button:hover {
+  background-color: var(--sap-gray-light);
+}
+
+.btn-run {
+  background-color: var(--sap-green) !important;
+  color: white !important;
+}
+
+.btn-run:hover {
+  background-color: var(--sap-green) !important;
+  opacity: 0.9;
+}
+
+.node-properties {
+  width: var(--properties-width);
+  background-color: var(--sap-gray-light);
+  border-left: 1px solid var(--sap-border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.node-properties h3 {
+  padding: 15px;
+  margin: 0;
+  border-bottom: 1px solid var(--sap-border);
+  font-size: 16px;
+}
+
+.properties-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.no-selection-message {
+  color: var(--sap-text-light);
+  text-align: center;
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--sap-border);
+  border-radius: var(--border-radius);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--sap-blue);
+  outline: none;
+}
+
+.form-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  padding: 8px 16px;
+  background-color: var(--sap-blue);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.form-actions button:hover {
+  background-color: var(--sap-blue-dark);
+}
+
+.conditions-list {
+  margin-top: 10px;
+}
+
+.condition-item {
+  padding: 8px;
+  background-color: white;
+  border: 1px solid var(--sap-border);
+  border-radius: var(--border-radius);
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-add-condition {
+  padding: 5px 10px;
+  background-color: var(--sap-blue);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.btn-remove-condition {
+  background: none;
+  border: none;
+  color: var(--sap-red);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.flow-builder-footer {
+  height: var(--footer-height);
+  border-top: 1px solid var(--sap-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  background-color: white;
+}
+
+.status-message {
+  font-size: 13px;
+}
+
+.status-message.success {
+  color: var(--sap-green);
+}
+
+.status-message.error {
+  color: var(--sap-red);
+}
+
+.status-message.warning {
+  color: var(--sap-orange);
+}
+
+.validation-status {
+  font-size: 13px;
+  max-width: 50%;
+}
+
+.validation-status.success {
+  color: var(--sap-green);
+}
+
+.validation-status.warning {
+  color: var(--sap-orange);
+}
+
+.validation-status.error {
+  color: var(--sap-red);
+}
+
+.validation-title {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.validation-status ul {
+  margin: 5px 0;
+  padding-left: 20px;
+}
+
+/* Code editor */
+.code-editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.code-editor-header {
+  height: 50px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sap-border);
+  background-color: white;
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+}
+
+.editor-actions button {
+  background: none;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  color: var(--sap-text);
+}
+
+.editor-actions button:hover {
+  background-color: var(--sap-gray-light);
+}
+
+.editor-actions .btn-execute {
+  background-color: var(--sap-green);
+  color: white;
+  width: auto;
+  padding: 0 15px;
+}
+
+.editor-actions .btn-execute:hover {
+  background-color: var(--sap-green);
+  opacity: 0.9;
+}
+
+.code-editor-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.monaco-editor-container {
+  height: 100%;
+  width: 100%;
+}
+
+.code-editor-footer {
+  height: var(--footer-height);
+  border-top: 1px solid var(--sap-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  background-color: white;
+  font-size: 13px;
+}
+
+.cursor-position {
+  color: var(--sap-text-light);
+}
+
+/* Results panel */
+.results-panel {
+  height: 200px;
+  border-top: 1px solid var(--sap-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.results-panel-header {
+  height: 30px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--sap-gray-light);
+  border-bottom: 1px solid var(--sap-border);
+}
+
+.results-panel-title {
+  font-weight: 500;
+}
+
+.results-panel-actions {
+  display: flex;
+  align-items: center;
+}
+
+.results-panel-actions button {
+  background: none;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  color: var(--sap-text);
+  font-size: 12px;
+}
+
+.results-panel-actions button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.results-panel-content {
+  flex: 1;
+  overflow: auto;
+  padding: 10px 15px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.results-panel-content.error {
+  color: var(--sap-red);
+  background-color: var(--sap-red-light);
+}
+
+.results-panel-content.success {
+  color: var(--sap-green);
+  background-color: var(--sap-green-light);
+}
+
+.results-panel-tabs {
+  display: flex;
+  align-items: center;
+}
+
+.results-panel-tab {
+  padding: 0 15px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.results-panel-tab.active {
+  font-weight: 500;
+  border-bottom: 2px solid var(--sap-blue);
+}
+
+/* Data viewer */
+.data-table-container {
+  overflow: auto;
+  height: 100%;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--sap-border);
+}
+
+.data-table th {
+  background-color: var(--sap-gray-light);
+  position: sticky;
+  top: 0;
+  font-weight: 500;
+}
+
+.data-table tr:hover {
+  background-color: var(--sap-blue-light);
+}
+
+/* Split panes */
+.split-pane {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.split-pane.vertical {
+  flex-direction: column;
+}
+
+.split-pane.horizontal {
+  flex-direction: row;
+}
+
+.split-pane-resizer {
+  background-color: var(--sap-border);
+  z-index: 1;
+}
+
+.split-pane-resizer.horizontal {
+  height: 100%;
+  width: 5px;
+  cursor: col-resize;
+}
+
+.split-pane-resizer.vertical {
+  width: 100%;
+  height: 5px;
+  cursor: row-resize;
+}
+
+.split-pane-resizer:hover, .split-pane-resizer.active {
+  background-color: var(--sap-blue);
+}
+
+/* Dialog */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Dashboard Dialog */
+.dashboard-dialog {
+  max-width: 900px;
+}
+
+.dashboard-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--sap-border);
+  margin-bottom: 15px;
+}
+
+.dashboard-tab {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+}
+
+.dashboard-tab.active {
+  border-bottom-color: var(--sap-blue);
+  color: var(--sap-blue);
+}
+
+.dashboard-tab-content {
+  display: none;
+}
+
+.dashboard-tab-content.active {
+  display: block;
+}
+
+.stat-card {
+  padding: 15px;
+  border-radius: var(--border-radius);
+  text-align: center;
+}
+
+.chart-container {
+  margin-bottom: 15px;
+}
+
+.chart-placeholder {
+  border-radius: var(--border-radius);
+  margin-top: 10px;
+}
+
+.dialog-header {
+  padding: 15px;
+  border-bottom: 1px solid var(--sap-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dialog-title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--sap-text-light);
+}
+
+.dialog-content {
+  padding: 15px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.dialog-footer {
+  padding: 15px;
+  border-top: 1px solid var(--sap-border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dialog-footer button {
+  padding: 8px 16px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.dialog-footer .btn-cancel {
+  background-color: white;
+  border: 1px solid var(--sap-border);
+  color: var(--sap-text);
+}
+
+.dialog-footer .btn-cancel:hover {
+  background-color: var(--sap-gray-light);
+}
+
+.dialog-footer .btn-primary {
+  background-color: var(--sap-blue);
+  border: none;
+  color: white;
+}
+
+.dialog-footer .btn-primary:hover {
+  background-color: var(--sap-blue-dark);
+}
+
+/* File browser */
+.file-browser {
+  height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--sap-border);
+  border-radius: var(--border-radius);
+}
+
+.file-list-item {
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: 1px solid var(--sap-border);
+}
+
+.file-list-item:hover {
+  background-color: var(--sap-blue-light);
+}
+
+.file-list-item i {
+  margin-right: 10px;
+  color: var(--sap-text-light);
+}
+
+.file-list-item.folder i {
+  color: var(--sap-orange);
+}
+
+.file-list-item.selected {
+  background-color: var(--sap-blue-light);
+  color: var(--sap-blue-dark);
+}
+
+/* React Flow customizations */
+.react-flow__node {
+  border-radius: var(--border-radius);
+  padding: 10px;
+  font-size: 12px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--sap-border);
+  background-color: white;
+}
+
+.react-flow__node.selected, .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--sap-blue);
+  stroke-width: 2px;
+}
+
+.react-flow__node-dataSource {
+  background-color: var(--sap-blue-light);
+  border-color: var(--sap-blue);
+}
+
+.react-flow__node-transformation {
+  background-color: var(--sap-orange-light);
+  border-color: var(--sap-orange);
+}
+
+.react-flow__node-analysis {
+  background-color: var(--sap-green-light);
+  border-color: var(--sap-green);
+}
+
+.react-flow__node-visualization {
+  background-color: var(--sap-gray-light);
+  border-color: var(--sap-gray);
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background-color: white;
+  border: 2px solid var(--sap-blue);
+}
+
+.react-flow__handle:hover {
+  background-color: var(--sap-blue-light);
+}
+
+.node-label {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.node-description {
+  font-size: 10px;
+  color: var(--sap-text-light);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  :root {
+    --palette-width: 200px;
+    --properties-width: 250px;
+  }
+}
+
+@media (max-width: 992px) {
+  .developer-navigator {
+    width: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .node-palette, .node-properties {
+    display: none;
+  }
+  
+  .developer-navigator {
+    display: none;
+  }
+}

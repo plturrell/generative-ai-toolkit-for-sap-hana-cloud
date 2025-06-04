@@ -1,0 +1,60 @@
+apiKey: 8c2b1633069ad5a567299c19acb8db9cb2e0098d78d24556b1749f0149fcc729
+billing:
+  alertThreshold: 500
+  projectId: sap-hana-toolkit
+endpoint:
+  advanced:
+    enableContinuousBatching: true
+    enableFlashAttention: true
+    enableKVCaching: true
+    enableTensorRT: true
+    schedulingStrategy: fair
+  description: SAP HANA AI Toolkit Backend API with GPU Acceleration
+  hardware:
+    count: 1
+    instanceType: a100-40gb
+  model:
+    baseModel: meta-llama/Llama-2-70b-chat-hf
+    quantization:
+      bits: 4
+      enabled: true
+      method: awq
+    serving:
+      maxBatchSize: 32
+      maxConcurrentRequests: 10
+      maxTokens: 4096
+      timeout: 120
+  name: sap-hana-ai-toolkit-backend
+  network:
+    allowedIPs: []
+    privateAccess: false
+  scaling:
+    maxReplicas: 2
+    minReplicas: 1
+    targetUtilization: 80
+environment:
+  API_HOST: 0.0.0.0
+  API_PORT: '8000'
+  AUTH_REQUIRED: 'true'
+  CONNECTION_POOL_SIZE: '20'
+  CORS_ORIGINS: '*'
+  DEPLOYMENT_MODE: api_only
+  DEPLOYMENT_PLATFORM: together
+  ENABLE_GPU_ACCELERATION: 'false'
+  ENABLE_TOGETHER_AI: 'true'
+  ENFORCE_HTTPS: 'true'
+  FRONTEND_URL: https://sap-hana-ai-toolkit.vercel.app
+  LOG_FORMAT: json
+  LOG_LEVEL: INFO
+  MAX_REQUEST_SIZE_MB: '20'
+  RATE_LIMIT_PER_MINUTE: '500'
+  REQUEST_TIMEOUT_SECONDS: '300'
+  TOGETHER_DEFAULT_EMBEDDING_MODEL: togethercomputer/m2-bert-80M-8k-retrieval
+  TOGETHER_DEFAULT_MODEL: meta-llama/Llama-2-70b-chat-hf
+monitoring:
+  logs:
+    level: INFO
+    retention: 7
+  metrics:
+    enabled: true
+    prometheus: true

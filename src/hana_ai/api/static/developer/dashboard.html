@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Builder - SAP HANA AI Toolkit</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/developer-studio.css">
+    <link rel="icon" type="image/png" href="../favicon.ico">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #0e6efd;
+            color: white;
+        }
+        
+        .dashboard-logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .dashboard-logo img {
+            height: 32px;
+            margin-right: 0.5rem;
+        }
+        
+        .dashboard-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .dashboard-content {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            background-color: #f5f5f5;
+        }
+        
+        #dashboard-builder {
+            height: 100%;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="dashboard-logo">
+                <img src="../img/sap-logo-white.svg" alt="SAP Logo">
+                <span>HANA AI Toolkit Dashboard Builder</span>
+            </div>
+            <div class="dashboard-actions">
+                <button id="back-to-studio" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Studio
+                </button>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <div class="dashboard-content">
+            <div id="dashboard-builder"></div>
+        </div>
+    </div>
+
+    <!-- Load React -->
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Load Custom Scripts -->
+    <script src="js/error-handler.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api-client.js"></script>
+    
+    <!-- Load React Components -->
+    <script type="text/babel" src="js/react-components.js"></script>
+    <script type="text/babel" src="js/dashboard-builder.js"></script>
+
+    <!-- Initialize Dashboard Builder -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Initialize API client
+                const apiClient = new APIClient({
+                    baseUrl: window.location.origin,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // Initialize Dashboard Builder
+                DashboardBuilder.render('dashboard-builder', { apiClient });
+
+                // Back to studio button
+                const backToStudioButton = document.getElementById('back-to-studio');
+                if (backToStudioButton) {
+                    backToStudioButton.addEventListener('click', () => {
+                        window.location.href = 'index.html';
+                    });
+                }
+
+                console.log('Dashboard Builder initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize Dashboard Builder:', error);
+                alert(`Failed to initialize Dashboard Builder: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html>

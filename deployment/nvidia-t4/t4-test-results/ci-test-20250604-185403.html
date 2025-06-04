@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVIDIA T4 CI Test Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 5px solid #76b900;
+        }
+        h1 {
+            margin: 0;
+            color: #76b900;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .summary {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .summary-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            flex-basis: 48%;
+            margin-bottom: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .summary-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .summary-box h2 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #555;
+        }
+        .summary-box .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .pass {
+            color: #28a745;
+        }
+        .partial {
+            color: #ffc107;
+        }
+        .fail {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        .success {
+            color: #28a745;
+        }
+        .warning {
+            color: #ffc107;
+        }
+        .failure {
+            color: #dc3545;
+        }
+        .section {
+            margin-bottom: 30px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .section h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-top: 0;
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        table th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+            color: #555;
+            position: sticky;
+            top: 0;
+        }
+        table tr:hover {
+            background-color: #f9f9f9;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        /* Performance graph styles */
+        .perf-bar {
+            height: 20px;
+            background-color: #76b900;
+            border-radius: 3px;
+            margin-top: 5px;
+            transition: width 0.5s ease-in-out;
+            position: relative;
+        }
+        .perf-container {
+            margin-top: 10px;
+            background-color: #f5f5f5;
+            border-radius: 3px;
+            padding: 2px;
+            position: relative;
+        }
+        .perf-label {
+            position: absolute;
+            right: 5px;
+            top: 2px;
+            font-size: 12px;
+            color: #444;
+        }
+        .speedup-bar {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        .speedup-marker {
+            position: relative;
+            height: 30px;
+        }
+        .speedup-value {
+            height: 30px;
+            line-height: 30px;
+            padding-left: 10px;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        .speedup-target {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #dc3545;
+        }
+        .speedup-target::after {
+            content: 'Target (1.8x)';
+            position: absolute;
+            top: -20px;
+            left: -30px;
+            font-size: 11px;
+            color: #dc3545;
+            white-space: nowrap;
+        }
+        .optimization-tips {
+            background-color: #fff;
+            border-left: 4px solid #17a2b8;
+            padding: 10px 15px;
+            margin-top: 20px;
+            border-radius: 0 3px 3px 0;
+        }
+        .optimization-tips h3 {
+            margin-top: 0;
+            color: #17a2b8;
+        }
+        .optimization-tips ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+        .optimization-tips li {
+            margin-bottom: 5px;
+        }
+        
+        /* Stats circle styles */
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            margin: 10px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .stat-circle:hover {
+            transform: scale(1.05);
+        }
+        .stat-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .stat-unit {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        .gpu-utilization {
+            background: linear-gradient(135deg, #76b900, #5a8f00);
+            color: white;
+        }
+        .gpu-memory {
+            background: linear-gradient(135deg, #1a73e8, #1559b7);
+            color: white;
+        }
+        .gpu-temp {
+            background: linear-gradient(135deg, #f6c142, #f28c38);
+            color: white;
+        }
+        .gpu-power {
+            background: linear-gradient(135deg, #e53935, #b71c1c);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NVIDIA T4 CI Test Report</h1>
+            <p>Test ID: ci-test-20250604-185403 | Date: 2025-06-04 18:54:21</p>
+        </header>
+        
+        <div class="summary">
+            <div class="summary-box">
+                <h2>Overall Status</h2>
+                <div class="value fail">FAIL</div>
+            </div>
+            <div class="summary-box">
+                <h2>Summary</h2>
+                <div>No GPU detected or tests failed</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>GPU Detection (nvidia-smi)</h2>
+            <table>
+                <tr>
+                    <th>Test</th>
+                    <th>Result</th>
+                </tr>
+                <tr>
+                    <td>GPU Detected</td>
+                    <td class="failure">❌ No</td>
+                </tr>
+                <tr>
+                    <td>T4 GPU</td>
+                    <td class="failure">❌ No</td>
+                </tr>
+
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>CUDA & PyTorch</h2>
+            <table>
+                <tr>
+                    <th>Test</th>
+                    <th>Result</th>
+                </tr>
+                <tr>
+                    <td>CUDA Available</td>
+                    <td class="failure">❌ No</td>
+                </tr>
+
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>TensorRT</h2>
+            <div class="summary">
+                <div class="summary-box">
+                    <h2>TensorRT Available</h2>
+                    <div class="failure">❌ No</div>
+                </div>
+                <div class="summary-box">
+                    <h2>T4 Optimization Score</h2>
+                    <div class="fail">0%</div>
+                </div>
+            </div>
+            
+            <table>
+                <tr>
+                    <th>Test</th>
+                    <th>Result</th>
+                    <th>Details</th>
+                </tr>
+
+            </table>
+            
+            <div class="optimization-tips">
+                <h3>Optimization Tips</h3>
+                <ul>
+
+                    <li>Install TensorRT for significant performance improvement on T4 GPUs</li>
+
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>API Endpoints</h2>
+            <div class="summary">
+                <div class="summary-box">
+                    <h2>API Status</h2>
+                    <div class="success">✅ Running</div>
+                </div>
+                <div class="summary-box">
+                    <h2>Authentication</h2>
+                    <div class="info">No authentication required</div>
+                </div>
+            </div>
+            
+            <p>Host: localhost:8000</p>
+            
+            <table>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+                <tr>
+                    <td>API Service</td>
+                    <td class="success">✅ Running</td>
+                    <td>Port 8000 open</td>
+                </tr>
+
+                <tr>
+                    <td colspan="3"><strong>Standard Endpoints</strong></td>
+                </tr>
+
+                <tr>
+                    <td>Root</td>
+                    <td class="failure">❌ Failed (N/A)</td>
+                    <td>/</td>
+                </tr>
+
+                <tr>
+                    <td>Health</td>
+                    <td class="failure">❌ Failed (N/A)</td>
+                    <td>/health</td>
+                </tr>
+
+                <tr>
+                    <td>System Info</td>
+                    <td class="failure">❌ Failed (N/A)</td>
+                    <td>/api/v1/system/info</td>
+                </tr>
+
+                <tr>
+                    <td>GPU Info</td>
+                    <td class="failure">❌ Failed (N/A)</td>
+                    <td>/api/v1/system/gpu</td>
+                </tr>
+
+            </table>
+            
+            <div class="optimization-tips">
+                <h3>API Testing Tips</h3>
+                <ul>
+
+                    <li>Some endpoints failed: Root, Health, System Info, GPU Info. Check the API configuration and logs.</li>
+
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Monitoring</h2>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+
+                <tr>
+                    <td>Prometheus</td>
+                    <td class="failure">❌ Not Available</td>
+                    <td>
+                        Port open: No<br>
+                        Health check: Failed
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Grafana</td>
+                    <td class="failure">❌ Not Available</td>
+                    <td>
+                        Port open: Yes<br>
+                        Health check: Failed
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>GPU Metrics Exporter</td>
+                    <td class="failure">❌ Not Available</td>
+                    <td>
+                        Port open: No<br>
+                        Metrics: Not Available
+                    </td>
+                </tr>
+
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Recommendations</h2>
+            <ul>
+                <li>Verify this is a T4 GPU instance - no T4 GPU was detected in tests</li>
+                <li>Install CUDA and PyTorch with CUDA support</li>
+                <li>Install TensorRT for improved inference performance</li>
+                <li>Configure Prometheus monitoring service</li>
+                <li>Configure Grafana dashboards for monitoring</li>
+                <li>Set up NVIDIA GPU metrics exporter</li>
+
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

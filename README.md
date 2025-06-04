@@ -68,6 +68,54 @@ For detailed NGC deployment options, see our [NGC Deployment Guide](NGC_DEPLOYME
 CANARY=true CANARY_WEIGHT=20 ./deployment/deploy.sh
 ```
 
+## T4 GPU Optimization & Testing Framework
+
+The Generative AI Toolkit includes NVIDIA T4 GPU optimization with TensorRT integration, Vercel deployment support, and a comprehensive testing framework. This ensures optimal performance across different deployment environments.
+
+### Verify Integration
+
+To verify that all components are correctly integrated, run:
+
+```bash
+./verify_integration.sh
+```
+
+This script checks that all required components are present and correctly integrated.
+
+### Run Tests
+
+```bash
+# Run all test suites
+./run_tests.sh --all
+
+# Run a specific test suite (e.g., GPU performance)
+./run_tests.sh --suite gpu_performance
+
+# Get detailed test output
+./run_tests.sh --all --verbose
+```
+
+The testing framework generates a comprehensive HTML report with performance metrics, recommendations, and detailed test results. For more information, see the [Testing Documentation](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/docs/testing.md).
+
+## Advanced T4 GPU Integration
+
+For advanced use cases, the toolkit now provides enhanced T4 GPU integration capabilities:
+
+```bash
+# Verify components are installed and properly configured
+./verify_integration.sh
+
+# Deploy to Vercel with T4 GPU backend
+./deployment/deploy-vercel-t4.sh
+```
+
+Make sure you have the required Python packages installed:
+
+```bash
+# Install required dependencies
+pip install numpy requests torch
+```
+
 ## Project Links
 
 - [Project Board](https://github.com/users/plturrell/projects/1)
@@ -78,6 +126,8 @@ CANARY=true CANARY_WEIGHT=20 ./deployment/deploy.sh
 - [NGC Deployment](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NGC_DEPLOYMENT.md)
 - [TensorRT Optimization](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/TENSORRT_OPTIMIZATION.md)
 - [API Documentation](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/README-API.md)
+- [T4 GPU Testing](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/docs/testing.md)
+- [Vercel Integration](https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/deployment/templates/vercel-t4-integration.json)
 
 ## Support, Feedback, Contributing
 

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVIDIA T4 Web Test Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 5px solid #76b900;
+        }
+        h1 {
+            margin: 0;
+            color: #76b900;
+        }
+        .summary {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .summary-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            flex-basis: 48%;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .summary-box h2 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+        .summary-box .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 30px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .section h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .pass {
+            color: #28a745;
+        }
+        .fail {
+            color: #dc3545;
+        }
+        .unknown {
+            color: #6c757d;
+        }
+        .screenshot {
+            max-width: 100%;
+            height: auto;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .screenshot-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .result-box {
+            border-left: 5px solid #ddd;
+            padding-left: 15px;
+            margin-bottom: 20px;
+        }
+        .result-box.success {
+            border-left-color: #28a745;
+        }
+        .result-box.failure {
+            border-left-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NVIDIA T4 Web Test Report</h1>
+            <p>Test ID: web-test-20250604-182831 | Date: 2025-06-04 18:28:57</p>
+        </header>
+
+        <div class="summary">
+            <div class="summary-box">
+                <h2>Overall Status</h2>
+                <div class="value fail">FAIL</div>
+            </div>
+            <div class="summary-box">
+                <h2>Summary</h2>
+                <div>Tests ran but NVIDIA T4 GPU not detected</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Jupyter Environment</h2>
+            <div class="result-box failure">
+                <h3>Status: ❌ Not Accessible</h3>
+                <p>Title: NVIDIA</p>
+
+                <div class="screenshot-container">
+                    <img src="screenshots/jupyter-login-20250604-182831.png" alt="Jupyter Screenshot" class="screenshot">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>GPU Test Notebook</h2>
+            <div class="result-box failure">
+                <h3>Status: ❌ CUDA Not Available</h3>
+
+                <div class="screenshot-container">
+                    <img src="screenshots/existing-notebook-20250604-182831.png" alt="GPU Notebook Screenshot" class="screenshot">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>API Health</h2>
+            <div class="result-box failure">
+                <h3>Status: ❌ Not Accessible</h3>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>API GPU Info</h2>
+            <div class="result-box failure">
+                <h3>Status: ❌ Not Accessible</h3>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Prometheus</h2>
+            <div class="result-box failure">
+                <h3>Status: ❌ Not Accessible</h3>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Grafana</h2>
+            <div class="result-box failure">
+                <h3>Status: ❌ Not Accessible</h3>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Recommendations</h2>
+            <ul>
+                <li>Verify this is a T4 GPU instance - no T4 GPU was detected in tests</li>
+                <li>Check API service status and configuration</li>
+                <li>Check Prometheus service status and configuration</li>
+                <li>Check Grafana service status and configuration</li>
+
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

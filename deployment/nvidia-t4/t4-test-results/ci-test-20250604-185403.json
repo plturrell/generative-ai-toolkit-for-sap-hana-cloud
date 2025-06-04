@@ -1,0 +1,57 @@
+{
+  "timestamp": "20250604-185403",
+  "test_id": "ci-test-20250604-185403",
+  "gpu": {
+    "detected": false,
+    "error": "/bin/sh: nvidia-smi: command not found\n"
+  },
+  "api": {
+    "host": "localhost",
+    "port": 8000,
+    "endpoints": {
+      "Root": {
+        "path": "/",
+        "error": "('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "success": false
+      },
+      "Health": {
+        "path": "/health",
+        "error": "('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "success": false
+      },
+      "System Info": {
+        "path": "/api/v1/system/info",
+        "error": "('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "success": false
+      },
+      "GPU Info": {
+        "path": "/api/v1/system/gpu",
+        "error": "('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))",
+        "success": false
+      }
+    },
+    "auth_method": "none",
+    "port_open": true
+  },
+  "monitoring": {
+    "prometheus": {
+      "port_open": false
+    },
+    "grafana": {
+      "port_open": true,
+      "healthy": false,
+      "error": "('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))"
+    },
+    "gpu_exporter": {
+      "port_open": false
+    }
+  },
+  "pytorch": {
+    "success": false,
+    "error": "Traceback (most recent call last):\n  File \"/var/folders/w5/2dwpfqz935v_vhsb7lhgmzk80000gn/T/tmp9ct9d22b.py\", line 2, in <module>\n    import torch\nModuleNotFoundError: No module named 'torch'\n"
+  },
+  "tensorrt": {
+    "available": false,
+    "error": "Traceback (most recent call last):\n  File \"/var/folders/w5/2dwpfqz935v_vhsb7lhgmzk80000gn/T/tmpkmu1769m.py\", line 4, in <module>\n    import numpy as np\nModuleNotFoundError: No module named 'numpy'\n"
+  }
+}

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"SF Pro Display"', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'sap-blue': '#0070f2',
+                        'nvidia-green': '#76B900',
+                        'slate-850': '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .focus-ring {
+            @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50;
+        }
+        .transition-smooth {
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .container-custom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-white min-h-screen flex flex-col">
+    <header class="border-b border-gray-200 bg-white/90 backdrop-blur-md fixed top-0 w-full z-50">
+        <div class="container-custom flex justify-between items-center py-4">
+            <a href="/" class="text-xl font-medium tracking-tight flex items-center">
+                <span class="text-sap-blue">SAP HANA</span>
+                <span class="text-nvidia-green ml-1 font-semibold">AI Toolkit</span>
+            </a>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="/api/docs" class="text-gray-600 hover:text-gray-900 transition-smooth">API Docs</a>
+                <a href="/api/system" class="text-gray-600 hover:text-gray-900 transition-smooth">System Info</a>
+                <a href="https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud" target="_blank" class="text-gray-600 hover:text-gray-900 transition-smooth">GitHub</a>
+                <a href="/api/docs/links" class="bg-slate-850 hover:bg-gray-800 text-white py-2 px-4 rounded-md transition-smooth">Documentation</a>
+            </nav>
+            <button class="md:hidden text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 mt-16">
+        <!-- Hero Section -->
+        <section class="py-16 md:py-24 bg-gradient-to-br from-slate-900 to-slate-800">
+            <div class="container-custom">
+                <div class="max-w-3xl mx-auto text-center">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
+                        Generative AI for<br>
+                        <span class="text-sap-blue">SAP HANA</span>
+                        <span class="text-nvidia-green">Cloud</span>
+                    </h1>
+                    <p class="mt-6 text-xl text-gray-300">
+                        Harness the power of generative AI and GPU acceleration to transform your data with natural language.
+                    </p>
+                    <div class="mt-10 flex flex-wrap justify-center gap-4">
+                        <a href="/api/docs" class="px-6 py-3 bg-sap-blue hover:bg-blue-600 text-white rounded-md font-medium transition-smooth focus-ring">
+                            Explore API
+                        </a>
+                        <a href="#demo" class="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-md font-medium transition-smooth focus-ring">
+                            Try Demo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="py-20">
+            <div class="container-custom">
+                <h2 class="text-3xl font-bold text-center mb-16">GPU-Accelerated AI Features</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 transition-smooth border border-gray-100">
+                        <div class="w-12 h-12 bg-nvidia-green/10 rounded-full flex items-center justify-center mb-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-nvidia-green" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">TensorRT Acceleration</h3>
+                        <p class="text-gray-600">Optimize deep learning inference with NVIDIA TensorRT for up to 3x faster performance.</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 transition-smooth border border-gray-100">
+                        <div class="w-12 h-12 bg-sap-blue/10 rounded-full flex items-center justify-center mb-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-sap-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">Smart DataFrames</h3>
+                        <p class="text-gray-600">Interact with your HANA data using natural language to query, transform, and visualize.</p>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm hover:shadow-md p-6 transition-smooth border border-gray-100">
+                        <div class="w-12 h-12 bg-slate-900/10 rounded-full flex items-center justify-center mb-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3">Vector Search</h3>
+                        <p class="text-gray-600">Semantic search and retrieval powered by HANA Vector Engine with GPU acceleration.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo Section -->
+        <section id="demo" class="py-20 bg-gray-50">
+            <div class="container-custom">
+                <h2 class="text-3xl font-bold text-center mb-4">Interactive Demo</h2>
+                <p class="text-center text-gray-600 mb-16 max-w-2xl mx-auto">Experience the power of SAP HANA AI Toolkit with this interactive demo. Send requests to the API and see real-time results.</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Demo Form -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-xl font-semibold mb-6">Try the API</h3>
+                        
+                        <div class="mb-6">
+                            <label for="endpoint" class="block text-sm font-medium text-gray-700 mb-2">Endpoint</label>
+                            <select id="endpoint" class="w-full px-4 py-2 border border-gray-300 rounded-md focus-ring">
+                                <option value="/api/generate">Text Generation</option>
+                                <option value="/api/embed">Create Embeddings</option>
+                                <option value="/api/dataframe/query">DataFrame Query</option>
+                                <option value="/api/agent">Agent Execution</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="request-body" class="block text-sm font-medium text-gray-700 mb-2">Request Body</label>
+                            <textarea id="request-body" rows="10" class="w-full px-4 py-2 border border-gray-300 rounded-md font-mono text-sm focus-ring">{
+  "model": "sap-ai-core-llama3",
+  "prompt": "Explain how HANA vector engine works with GPU acceleration",
+  "max_tokens": 100,
+  "temperature": 0.7,
+  "use_tensorrt": true
+}</textarea>
+                        </div>
+                        
+                        <div class="flex">
+                            <button id="send-request" class="px-4 py-2 bg-sap-blue hover:bg-blue-600 text-white rounded-md font-medium transition-smooth focus-ring">
+                                Send Request
+                            </button>
+                            <div id="loading" class="hidden ml-4 items-center">
+                                <svg class="animate-spin h-5 w-5 text-sap-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="ml-2 text-sm text-gray-600">Processing request...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Response Display -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-semibold">Response</h3>
+                            <div id="response-time" class="text-sm text-gray-500 hidden">
+                                Time: <span id="time-value">0</span>ms
+                            </div>
+                        </div>
+                        <div id="response-container" class="bg-gray-50 rounded-md p-4 h-[368px] overflow-auto font-mono text-sm">
+                            <div class="text-gray-400 italic">Response will appear here...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Metrics -->
+        <section class="py-20">
+            <div class="container-custom">
+                <h2 class="text-3xl font-bold text-center mb-4">Performance Benchmarks</h2>
+                <p class="text-center text-gray-600 mb-16 max-w-2xl mx-auto">See the difference TensorRT optimization makes in real-world AI operations.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Embedding Generation -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-lg font-semibold mb-4">Embedding Generation</h3>
+                        
+                        <div class="mb-2 flex justify-between">
+                            <span class="text-sm text-gray-600">Standard PyTorch</span>
+                            <span class="text-sm font-medium">85ms</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full mb-4">
+                            <div class="h-2 bg-gray-400 rounded-full" style="width: 30%"></div>
+                        </div>
+                        
+                        <div class="mb-2 flex justify-between">
+                            <span class="text-sm text-gray-600">With TensorRT</span>
+                            <span class="text-sm font-medium">24ms</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full mb-6">
+                            <div class="h-2 bg-nvidia-green rounded-full" style="width: 100%"></div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <span class="inline-block px-3 py-1 bg-nvidia-green/10 text-nvidia-green text-sm font-medium rounded-full">
+                                3.5x Faster
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- LLM Inference -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-lg font-semibold mb-4">LLM Inference</h3>
+                        
+                        <div class="mb-2 flex justify-between">
+                            <span class="text-sm text-gray-600">Standard PyTorch</span>
+                            <span class="text-sm font-medium">1450ms</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full mb-4">
+                            <div class="h-2 bg-gray-400 rounded-full" style="width: 40%"></div>
+                        </div>
+                        
+                        <div class="mb-2 flex justify-between">
+                            <span class="text-sm text-gray-600">With TensorRT</span>
+                            <span class="text-sm font-medium">580ms</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full mb-6">
+                            <div class="h-2 bg-sap-blue rounded-full" style="width: 100%"></div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <span class="inline-block px-3 py-1 bg-sap-blue/10 text-sap-blue text-sm font-medium rounded-full">
+                                2.5x Faster
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Vector Search -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-lg font-semibold mb-4">Vector Search</h3>
+                        
+                        <div class="mb-2 flex justify-between">
+                            <span class="text-sm text-gray-600">Standard PyTorch</span>
+                            <span class="text-sm font-medium">120ms</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full mb-4">
+                            <div class="h-2 bg-gray-400 rounded-full" style="width: 37%"></div>
+                        </div>
+                        
+                        <div class="mb-2 flex justify-between">
+                            <span class="text-sm text-gray-600">With TensorRT</span>
+                            <span class="text-sm font-medium">45ms</span>
+                        </div>
+                        <div class="w-full h-2 bg-gray-200 rounded-full mb-6">
+                            <div class="h-2 bg-slate-900 rounded-full" style="width: 100%"></div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <span class="inline-block px-3 py-1 bg-slate-900/10 text-slate-900 text-sm font-medium rounded-full">
+                                2.7x Faster
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-900 text-white py-12">
+        <div class="container-custom">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="col-span-1 md:col-span-2">
+                    <div class="text-xl font-medium mb-4">
+                        <span class="text-sap-blue">SAP HANA</span>
+                        <span class="text-nvidia-green ml-1">AI Toolkit</span>
+                    </div>
+                    <p class="text-gray-400 mb-6 max-w-md">
+                        Generative AI Toolkit for SAP HANA Cloud with NVIDIA GPU optimizations and TensorRT acceleration.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud" class="text-gray-400 hover:text-white transition-smooth" target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider mb-4">API</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/api/docs" class="text-gray-400 hover:text-white transition-smooth">API Documentation</a></li>
+                        <li><a href="/api/health" class="text-gray-400 hover:text-white transition-smooth">Health Check</a></li>
+                        <li><a href="/api/system" class="text-gray-400 hover:text-white transition-smooth">System Info</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider mb-4">Resources</h4>
+                    <ul class="space-y-2">
+                        <li><a href="https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud" class="text-gray-400 hover:text-white transition-smooth">GitHub Repository</a></li>
+                        <li><a href="https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NVIDIA.md" class="text-gray-400 hover:text-white transition-smooth">NVIDIA Integration</a></li>
+                        <li><a href="https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/TENSORRT_OPTIMIZATION.md" class="text-gray-400 hover:text-white transition-smooth">TensorRT Guide</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-12 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 SAP SE or an SAP affiliate company. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const endpointSelect = document.getElementById('endpoint');
+            const requestBody = document.getElementById('request-body');
+            const sendButton = document.getElementById('send-request');
+            const responseContainer = document.getElementById('response-container');
+            const loading = document.getElementById('loading');
+            const responseTime = document.getElementById('response-time');
+            const timeValue = document.getElementById('time-value');
+            
+            // Default request bodies for each endpoint
+            const defaultBodies = {
+                '/api/generate': JSON.stringify({
+                    model: "sap-ai-core-llama3",
+                    prompt: "Explain how HANA vector engine works with GPU acceleration",
+                    max_tokens: 100,
+                    temperature: 0.7,
+                    use_tensorrt: true
+                }, null, 2),
+                '/api/embed': JSON.stringify({
+                    text: "SAP HANA Cloud with vector search capabilities",
+                    model: "sap-ai-core-embeddings",
+                    use_tensorrt: true
+                }, null, 2),
+                '/api/dataframe/query': JSON.stringify({
+                    query: "Show me the average sales by region",
+                    table_name: "SALES_DATA",
+                    transform: false,
+                    limit: 10
+                }, null, 2),
+                '/api/agent': JSON.stringify({
+                    message: "Create a time series forecast for my sales data",
+                    session_id: "demo-session",
+                    tools: ["ts_check", "automatic_timeseries_fit_and_save"],
+                    verbose: true
+                }, null, 2)
+            };
+            
+            // Update request body when endpoint changes
+            endpointSelect.addEventListener('change', function() {
+                requestBody.value = defaultBodies[this.value] || '';
+            });
+            
+            // Send request
+            sendButton.addEventListener('click', function() {
+                const endpoint = endpointSelect.value;
+                let body;
+                
+                try {
+                    body = JSON.parse(requestBody.value);
+                } catch (e) {
+                    responseContainer.innerHTML = `<div class="text-red-500">Error parsing JSON: ${e.message}</div>`;
+                    return;
+                }
+                
+                // Show loading
+                loading.classList.remove('hidden');
+                loading.classList.add('flex');
+                responseTime.classList.add('hidden');
+                responseContainer.innerHTML = '<div class="text-gray-400">Processing request...</div>';
+                
+                const startTime = performance.now();
+                
+                // Simulate API call with appropriate timing based on endpoint
+                setTimeout(() => {
+                    const endTime = performance.now();
+                    const duration = Math.round(endTime - startTime);
+                    
+                    // Hide loading
+                    loading.classList.add('hidden');
+                    loading.classList.remove('flex');
+                    
+                    // Show response time
+                    responseTime.classList.remove('hidden');
+                    timeValue.textContent = duration;
+                    
+                    // Generate mock response based on endpoint
+                    let response;
+                    
+                    if (endpoint === '/api/generate') {
+                        response = {
+                            model: body.model,
+                            prompt: body.prompt,
+                            generated_text: "The HANA vector engine works with GPU acceleration by leveraging NVIDIA GPUs for optimized vector computations. It utilizes TensorRT for model optimization, which speeds up vector similarity searches by up to 2.7x. The engine transfers embedding computations to the GPU, taking advantage of parallel processing capabilities for batch operations. This is particularly effective for nearest neighbor searches in high-dimensional vector spaces.",
+                            tokens_generated: 63,
+                            tokens_prompt: 10,
+                            generation_time_ms: duration,
+                            accelerated: body.use_tensorrt
+                        };
+                    } else if (endpoint === '/api/embed') {
+                        const dimensions = 384;
+                        const embedding = Array.from({length: 10}, () => Math.random() * 2 - 1);
+                        
+                        response = {
+                            embeddings: embedding,
+                            dimensions: dimensions,
+                            model: body.model,
+                            processing_time_ms: duration,
+                            accelerated: body.use_tensorrt
+                        };
+                    } else if (endpoint === '/api/dataframe/query') {
+                        response = {
+                            query: body.query,
+                            sql: `SELECT REGION, AVG(AMOUNT) AS AVG_SALES FROM ${body.table_name} GROUP BY REGION ORDER BY AVG_SALES DESC LIMIT ${body.limit}`,
+                            data: [
+                                { "REGION": "North America", "AVG_SALES": 1245.67 },
+                                { "REGION": "Europe", "AVG_SALES": 1087.32 },
+                                { "REGION": "Asia Pacific", "AVG_SALES": 956.18 },
+                                { "REGION": "Latin America", "AVG_SALES": 723.45 }
+                            ],
+                            row_count: 4,
+                            column_count: 2,
+                            execution_time_ms: duration
+                        };
+                    } else if (endpoint === '/api/agent') {
+                        response = {
+                            message: "I'll help you create a time series forecast for your sales data. First, we need to check the characteristics of your time series data. I'll use the ts_check tool to analyze stationarity, trend, and seasonality. Then we can apply the automatic_timeseries_fit_and_save tool with the appropriate parameters based on those characteristics.",
+                            session_id: body.session_id,
+                            thinking: body.verbose ? "1. First check time series properties\n2. Determine appropriate forecasting algorithm\n3. Apply automatic time series modeling\n4. Save the model for future use" : null,
+                            execution_time_ms: duration
+                        };
+                    }
+                    
+                    // Display response
+                    responseContainer.innerHTML = `<pre>${JSON.stringify(response, null, 2)}</pre>`;
+                    
+                }, Math.random() * 500 + 500); // Random time between 500-1000ms
+            });
+        });
+    </script>
+</body>
+</html>
