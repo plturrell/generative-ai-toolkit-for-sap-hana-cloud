@@ -2,14 +2,14 @@
   "name": "hana-ai-toolkit",
   "version": "1.0.0",
   "description": "Generative AI Toolkit for SAP HANA Cloud with NVIDIA GPU optimization",
-  "type": "model",
+  "type": "application",
   "framework": "PyTorch",
   "platform": "Linux",
   "os": "Ubuntu 22.04",
   "gpuType": "A100, H100",
   "cudaVersion": "12.2",
   "licenses": ["Apache-2.0"],
-  "tags": ["SAP", "HANA", "GenerativeAI", "LLM", "GPU-Optimized", "TensorRT", "Hopper-Optimized"],
+  "tags": ["SAP", "HANA", "GenerativeAI", "LLM", "GPU-Optimized", "TensorRT", "Hopper-Optimized", "GPTQ", "AWQ"],
   "resources": {
     "gpu": 1,
     "minGpuMemory": 16,
@@ -18,17 +18,61 @@
   },
   "hopper": {
     "optimized": true,
-    "features": ["FP8", "Transformer Engine", "Flash Attention 2", "FSDP", "TensorRT"]
+    "features": ["FP8", "Transformer Engine", "Flash Attention 2", "FSDP", "TensorRT", "GPTQ", "AWQ"]
   },
   "containerInfo": {
     "registry": "nvcr.io",
     "repository": "ea-sap/hana-ai-toolkit",
+    "dockerfile": "/deployment/Dockerfile.ngc",
     "runOptions": "--gpus all --ipc=host --ulimit memlock=-1 --ulimit stack=67108864",
-    "ports": [8000, 9090]
+    "ports": [8000, 9090, 3000],
+    "environment": {
+      "NVIDIA_VISIBLE_DEVICES": "all",
+      "ENABLE_GPU_OPTIMIZATIONS": "true",
+      "ENABLE_TRANSFORMER_ENGINE": "true",
+      "ENABLE_FLASH_ATTENTION": "true",
+      "ENABLE_GPTQ": "true",
+      "ENABLE_AWQ": "true",
+      "DEFAULT_QUANT_METHOD": "gptq"
+    }
   },
   "documentation": {
     "quick-start": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/README.md",
-    "user-guide": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NVIDIA.md"
+    "user-guide": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NVIDIA.md",
+    "gpu-optimization": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/GPU_OPTIMIZATION.md"
+  },
+  "examples": {
+    "basic": "/examples/basic_usage.py",
+    "advanced": "/examples/advanced_gpu_optimization.py",
+    "sap-hana-integration": "/examples/sap_hana_integration.py"
+  },
+  "startup": {
+    "command": "python -m hana_ai.api",
+    "readyCheck": {
+      "url": "http://localhost:8000/health",
+      "expectedStatus": 200
+    }
+  },
+  "volumes": [
+    {
+      "name": "model-cache",
+      "mountPath": "/app/model-cache",
+      "description": "Persistent storage for quantized models"
+    },
+    {
+      "name": "config",
+      "mountPath": "/app/config",
+      "description": "Configuration files for the application"
+    }
+  ],
+  "metrics": {
+    "prometheus": {
+      "port": 9090,
+      "path": "/metrics"
+    },
+    "dashboards": {
+      "grafana": "/grafana/provisioning/dashboards/api.json"
+    }
   },
   "ngcRecommends": {
     "containers": [
@@ -39,5 +83,42 @@
       "nvidia/text-generation",
       "nvidia/embedding-models"
     ]
+  },
+  "quantization": {
+    "methods": ["gptq", "awq"],
+    "precision": ["int8", "int4"],
+    "calibrationData": {
+      "automatic": true,
+      "domainSpecific": true
+    }
+  },
+  "tensorrt": {
+    "enabled": true,
+    "calibration": {
+      "int8": true,
+      "precisionConstraints": "obey"
+    }
+  },
+  "deployment": {
+    "kubernetes": {
+      "template": "/deployment/kubernetes/deployment.yaml"
+    },
+    "docker": {
+      "compose": "/deployment/docker-compose.yml",
+      "dockerfile": "/deployment/Dockerfile",
+      "nvidia_dockerfile": "/deployment/Dockerfile.ngc"
+    },
+    "cloudfoundry": {
+      "manifest": "/deployment/cloudfoundry/manifest.yml.template"
+    },
+    "kyma": {
+      "template": "/deployment/kyma/deployment.yaml"
+    },
+    "canary": {
+      "cloudfoundry": "/deployment/canary/cf-canary.yml",
+      "kubernetes": "/deployment/canary/k8s-canary.yaml",
+      "deployment_script": "/deployment/canary/canary-deployment.sh",
+      "promotion_script": "/deployment/canary/canary-promotion.sh"
+    }
   }
 }

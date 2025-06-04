@@ -8,12 +8,13 @@ from fastapi import FastAPI, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from .config import settings
-from .routers import agents, dataframes, tools, vectorstore
+from .routers import agents, dataframes, tools, vectorstore, config, developer
 from .middleware import (
     RequestLoggerMiddleware, 
     SecurityHeadersMiddleware,
@@ -85,11 +86,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files
+import os
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 # Register routers
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["Agents"])
 app.include_router(dataframes.router, prefix="/api/v1/dataframes", tags=["DataFrames"])
 app.include_router(tools.router, prefix="/api/v1/tools", tags=["Tools"])
 app.include_router(vectorstore.router, prefix="/api/v1/vectorstore", tags=["VectorStore"])
+app.include_router(config.router, prefix="/api/v1/config", tags=["Configuration"])
+app.include_router(developer.router, prefix="/api/v1/developer", tags=["Developer"])
+
+# Admin panel
+@app.get("/admin", response_class=HTMLResponse, tags=["Admin"])
+async def admin_panel():
+    """Serve the admin panel UI."""
+    admin_html_path = os.path.join(static_dir, "admin", "index.html")
+    with open(admin_html_path, "r") as f:
+        return f.read()
+
+# Developer Studio
+@app.get("/developer", response_class=HTMLResponse, tags=["Developer"])
+async def developer_studio():
+    """Serve the developer studio UI."""
+    developer_html_path = os.path.join(static_dir, "developer", "index.html")
+    with open(developer_html_path, "r") as f:
+        return f.read()
+
+# Root endpoint - redirect to developer studio
+@app.get("/", tags=["Root"])
+async def root():
+    """Redirect to developer studio."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/developer")
 
 # Startup and shutdown events
 @app.on_event("startup")
@@ -228,6 +259,30 @@ async def health_check(request: Request):
             health_status["database_error"] = str(e)
     
     return health_status
+
+# Additional /health endpoint for compatibility with standard health check patterns
+@app.get(
+    "/health", 
+    tags=["Health"],
+    summary="Health check",
+    description="Verify that the API is operational - simplified endpoint for monitoring systems"
+)
+async def health_endpoint(request: Request):
+    """
+    Simplified health check endpoint for monitoring systems.
+    Returns 200 OK if the service is running.
+    """
+    # Use validation results if available
+    if hasattr(app.state, "validation_results"):
+        status = app.state.validation_results["overall"]["status"]
+        if status == "error":
+            return JSONResponse(
+                status_code=503,  # Service Unavailable
+                content={"status": "unhealthy"}
+            )
+    
+    # Return simple healthy response
+    return {"status": "healthy"}
 
 # Detailed validation endpoint
 @app.get(
