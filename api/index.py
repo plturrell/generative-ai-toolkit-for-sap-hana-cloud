@@ -89,6 +89,14 @@ class Handler(BaseHTTPRequestHandler):
                         <li>SQL query execution through natural language</li>
                     </ul>
                     
+                    <h2>Multi-Platform Deployment</h2>
+                    <p>This instance is deployed with:</p>
+                    <ul>
+                        <li>Frontend: Vercel</li>
+                        <li>Backend: Together.ai</li>
+                        <li>Model: Llama-3.3-70B-Instruct-Turbo</li>
+                    </ul>
+                    
                     <h2>API Endpoints</h2>
                     
                     <div class="endpoint">
@@ -131,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
                     <p>All API endpoints require authentication. Include your API key in the <code>X-API-Key</code> header with each request.</p>
                     
                     <div class="footer">
-                        <p>Generative AI Toolkit for SAP HANA Cloud with NVIDIA GPU optimization</p>
+                        <p>Generative AI Toolkit for SAP HANA Cloud with Together.ai Integration</p>
                         <p>Version 1.0.0</p>
                     </div>
                 </body>
@@ -148,29 +156,31 @@ class Handler(BaseHTTPRequestHandler):
                 
                 # Basic project information
                 project_info = {
-                    "name": "SAP HANA AI Toolkit with NVIDIA GPU Optimizations",
+                    "name": "SAP HANA AI Toolkit with Together.ai Integration",
                     "version": "1.0.0",
-                    "description": "Generative AI Toolkit for SAP HANA Cloud with NVIDIA optimizations",
+                    "description": "Generative AI Toolkit for SAP HANA Cloud with Together.ai integration",
+                    "deployment": {
+                        "mode": "hybrid",
+                        "frontend": "Vercel",
+                        "backend": "Together.ai"
+                    },
                     "features": [
-                        "NVIDIA NGC Integration",
-                        "TensorRT Optimization",
-                        "Hopper Architecture Support",
-                        "Multi-GPU Distribution",
-                        "Production-Ready Deployment"
+                        "Multi-platform deployment",
+                        "Together.ai model integration",
+                        "Flexible backend routing",
+                        "High-performance inference",
+                        "Production-ready setup"
                     ],
-                    "optimizations": {
-                        "tensorrt": {
-                            "enabled": True,
-                            "version": "8.6.1",
-                            "precision": "fp16",
-                            "workspace_size_mb": 1024
-                        },
-                        "hopper": {
-                            "fp8": True,
-                            "transformer_engine": True,
-                            "flash_attention": True,
-                            "fsdp": True
-                        }
+                    "model": {
+                        "name": "Llama-3.3-70B-Instruct-Turbo",
+                        "provider": "Together.ai",
+                        "context_length": 131072,
+                        "capabilities": [
+                            "Chat completion",
+                            "Tool use",
+                            "Reasoning",
+                            "Code generation"
+                        ]
                     },
                     "benchmarks": {
                         "embedding_generation": {
@@ -190,9 +200,9 @@ class Handler(BaseHTTPRequestHandler):
                         }
                     },
                     "documentation": {
-                        "quick-start": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/README.md",
-                        "user-guide": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/NVIDIA.md",
-                        "gpu-optimization": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud/blob/main/GPU_OPTIMIZATION.md"
+                        "quick-start": "https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/README.md",
+                        "deployment": "https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/DEPLOYMENT_ARCHITECTURE.md",
+                        "multi-backend": "https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud/blob/main/MULTI_BACKEND.md"
                     },
                     "endpoints": {
                         "health": "/health",
@@ -202,7 +212,7 @@ class Handler(BaseHTTPRequestHandler):
                         "tools": "/api/v1/tools",
                         "vectorstore": "/api/v1/vectorstore"
                     },
-                    "repository": "https://github.com/finsightsap/generative-ai-toolkit-for-sap-hana-cloud"
+                    "repository": "https://github.com/plturrell/generative-ai-toolkit-for-sap-hana-cloud"
                 }
                 
                 self.wfile.write(json.dumps(project_info).encode())

@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r api/requirements-vercel.txt",
+  "buildCommand": "pip install -r requirements-vercel.txt",
   "outputDirectory": "public",
   "env": {
+    "DEPLOYMENT_MODE": "ui_only",
+    "DEPLOYMENT_PLATFORM": "vercel",
+    "API_BASE_URL": "https://api.together.xyz/v1/sap-hana-ai-toolkit",
     "API_HOST": "0.0.0.0",
     "API_PORT": "8000",
     "LOG_LEVEL": "INFO",
@@ -14,11 +17,11 @@
     "REQUEST_TIMEOUT_SECONDS": "60",
     "MAX_REQUEST_SIZE_MB": "10",
     
-    "ENABLE_GPU_ACCELERATION": "true",
+    "ENABLE_GPU_ACCELERATION": "false",
     "ENABLE_TOGETHER_AI": "true",
-    "TOGETHER_API_KEY": "8c2b1633069ad5a567299c19acb8db9cb2e0098d78d24556b1749f0149fcc729",
-    "TOGETHER_DEFAULT_MODEL": "meta-llama/Llama-2-70b-chat-hf",
-    "TOGETHER_DEFAULT_EMBEDDING_MODEL": "togethercomputer/m2-bert-80M-8k-retrieval",
+    "TOGETHER_API_KEY": "tgp_v1_Yxsd-Ud8_JfNVm5lcnSmXvvWpNBMPq1_KY6ZxQLRZYI",
+    "TOGETHER_DEFAULT_MODEL": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "TOGETHER_DEFAULT_EMBEDDING_MODEL": "togethercomputer/m2-bert-80M-32k-retrieval",
     "TOGETHER_TIMEOUT": "60.0",
     
     "ENABLE_TENSORRT": "false",
@@ -68,7 +71,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self'; style-src 'self';"
+          "value": "default-src 'self'; script-src 'self'; connect-src 'self' https://api.together.xyz; img-src 'self'; style-src 'self';"
         }
       ]
     }
