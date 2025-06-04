@@ -1,0 +1,37 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration for NVIDIA T4 GPU monitoring
+scrape_configs:
+  # API metrics
+  - job_name: "hana-ai-api"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["hana-ai-api:9090"]
+    metrics_path: "/metrics"
+
+  # NVIDIA GPU metrics
+  - job_name: "nvidia-gpu"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["nvidia-smi-exporter:9835"]
+    metrics_path: "/metrics"
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["localhost:9090"]

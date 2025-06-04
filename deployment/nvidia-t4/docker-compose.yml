@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  hana-ai-api:
+    build:
+      context: ../..
+      dockerfile: deployment/nvidia-t4/Dockerfile
+    image: hana-ai-toolkit-t4:latest
+    container_name: hana-ai-toolkit-t4
+    env_file:
+      - t4-environment.env
+    ports:
+      - "${API_PORT:-8000}:8000"
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ../../:/app
+      - nvidia-cache:/tmp/cuda-cache
+      - tensorrt-cache:/tmp/tensorrt_engines
+    restart: unless-stopped
+    networks:
+      - hana-ai-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ../prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9091:9090"
+    restart: unless-stopped
+    networks:
+      - hana-ai-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - hana-ai-network
+    depends_on:
+      - prometheus
+
+  nvidia-smi-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:latest
+    container_name: nvidia-smi-exporter
+    restart: unless-stopped
+    ports:
+      - "9835:9835"
+    runtime: nvidia
+    networks:
+      - hana-ai-network
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    depends_on:
+      - prometheus
+
+networks:
+  hana-ai-network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  nvidia-cache:
+  tensorrt-cache:

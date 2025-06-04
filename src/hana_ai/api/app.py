@@ -220,6 +220,33 @@ async def startup():
         except Exception as e:
             logger.warning(f"Error configuring GPU settings: {str(e)}")
     
+    # Initialize GPU detection and optimization
+    try:
+        from .gpu_detection import gpu_optimizer, get_gpu_info
+        
+        # Get GPU information
+        gpu_info = get_gpu_info()
+        app.state.gpu_info = gpu_info
+        
+        if gpu_info["has_gpu"]:
+            logger.info(f"Detected GPU: {gpu_info['architecture']} architecture, {gpu_info['count']} device(s)")
+            for i, model in enumerate(gpu_info["models"]):
+                memory = gpu_info["memory_gb"][i] if i < len(gpu_info["memory_gb"]) else "unknown"
+                logger.info(f"  GPU {i}: {model} with {memory} GB memory")
+            
+            # Store GPU optimizer
+            app.state.gpu_optimizer = gpu_optimizer
+            
+            # For T4 GPUs, initialize specific T4 optimizer
+            if "turing" in gpu_info["architecture"].lower() or any("t4" in model.lower() for model in gpu_info["models"]):
+                from .gpu_utils_t4 import optimize_for_t4
+                app.state.t4_optimizer = optimize_for_t4()
+                logger.info("Initialized T4-specific GPU optimizations")
+        else:
+            logger.info("No GPU detected, running in CPU-only mode")
+    except Exception as e:
+        logger.warning(f"Error during GPU detection and optimization: {str(e)}")
+    
     # Initialize Multi-GPU Manager if GPU acceleration is enabled
     if settings.ENABLE_GPU_ACCELERATION:
         from .gpu_utils import MultiGPUManager
@@ -282,7 +309,7 @@ async def health_check(request: Request):
     """
     Health check endpoint to verify the API is running.
     
-    Also checks connection to database if available.
+    Also checks connection to database if available and reports GPU status.
     """
     from hana_ml.dataframe import ConnectionContext
     from .dependencies import get_connection_context
@@ -316,6 +343,22 @@ async def health_check(request: Request):
             health_status["status"] = "degraded"
             health_status["database"] = "disconnected"
             health_status["database_error"] = str(e)
+    
+    # Add GPU information if available
+    if hasattr(app.state, "gpu_info"):
+        gpu_info = app.state.gpu_info
+        health_status["gpu"] = {
+            "available": gpu_info["has_gpu"],
+            "count": gpu_info["count"],
+            "architecture": gpu_info["architecture"]
+        }
+        
+        if gpu_info["has_gpu"]:
+            health_status["gpu"]["models"] = gpu_info["models"]
+            
+            # Add T4-specific information if applicable
+            if hasattr(app.state, "t4_optimizer"):
+                health_status["gpu"]["t4_optimized"] = True
     
     return health_status
 
