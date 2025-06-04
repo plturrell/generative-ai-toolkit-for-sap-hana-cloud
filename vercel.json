@@ -2,13 +2,6 @@
   "version": 2,
   "buildCommand": "pip install -r api/requirements.txt",
   "outputDirectory": "public",
-  "functions": {
-    "api/**/*.py": {
-      "runtime": "vercel-python@3.9",
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
   "env": {
     "API_HOST": "0.0.0.0",
     "API_PORT": "8000",
