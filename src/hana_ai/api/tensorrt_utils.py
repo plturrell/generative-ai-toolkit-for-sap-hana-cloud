@@ -10,6 +10,7 @@ import json
 import time
 import logging
 import tempfile
+import numpy as np
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple, Union, Callable
 from dataclasses import dataclass
@@ -253,8 +254,79 @@ class TensorRTEngine:
                 
                 # Set up INT8 calibrator if provided
                 if self.config.calibration_data:
-                    # Implement calibrator if needed
-                    pass
+                    class Int8EntropyCalibrator2(trt.IInt8EntropyCalibrator2):
+                        def __init__(self, calibration_data, batch_size, input_name, input_shape):
+                            super().__init__()
+                            self.calibration_data = calibration_data
+                            self.batch_size = batch_size
+                            self.input_name = input_name
+                            self.input_shape = input_shape
+                            self.current_index = 0
+                            self.num_calibration_batches = min(128, len(calibration_data) // batch_size)
+                            
+                            # Allocate GPU memory for calibration data
+                            self.device_input = cuda.cuMemAlloc(
+                                trt.volume(input_shape) * trt.float32.itemsize * batch_size
+                            )
+                            
+                            # Cache path for calibration cache
+                            self.cache_file = os.path.join(
+                                os.path.dirname(self.config.cache_dir), 
+                                f"calibration_{os.path.basename(self.config.serialized_engine_path or 'model')}.cache"
+                            )
+                            
+                        def get_batch_size(self):
+                            return self.batch_size
+                            
+                        def get_batch(self, names):
+                            if self.current_index >= self.num_calibration_batches:
+                                return None
+                                
+                            # Prepare batch data
+                            batch_data = np.zeros((self.batch_size,) + tuple(self.input_shape[1:]), dtype=np.float32)
+                            for i in range(self.batch_size):
+                                data_index = self.current_index * self.batch_size + i
+                                if data_index < len(self.calibration_data):
+                                    # Convert data to appropriate format
+                                    # This would need to be customized based on data format
+                                    batch_data[i] = self.calibration_data[data_index]
+                            
+                            # Copy data to GPU
+                            cuda.cuMemcpyHtoD(
+                                self.device_input, 
+                                np.ascontiguousarray(batch_data), 
+                                batch_data.nbytes
+                            )
+                            
+                            # Increment counter
+                            self.current_index += 1
+                            
+                            return [int(self.device_input)]
+                            
+                        def read_calibration_cache(self):
+                            if os.path.exists(self.cache_file):
+                                with open(self.cache_file, "rb") as f:
+                                    return f.read()
+                            return None
+                            
+                        def write_calibration_cache(self, cache):
+                            with open(self.cache_file, "wb") as f:
+                                f.write(cache)
+                    
+                    # Get first input name
+                    input_name = list(input_shapes.keys())[0]
+                    
+                    # Create calibrator
+                    calibrator = Int8EntropyCalibrator2(
+                        calibration_data=self.config.calibration_data,
+                        batch_size=self.config.max_batch_size,
+                        input_name=input_name,
+                        input_shape=[self.config.max_batch_size] + input_shapes[input_name]
+                    )
+                    
+                    # Set calibrator
+                    config.int8_calibrator = calibrator
+                    logger.info("INT8 calibration enabled")
             
             # Parse ONNX file
             parser = trt.OnnxParser(network, self.trt_logger)
