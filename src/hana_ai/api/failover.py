@@ -3,6 +3,7 @@ Failover handling and resilience module for SAP HANA AI Toolkit.
 
 This module provides advanced failover mechanisms and resilience patterns
 to ensure high availability of the SAP HANA AI Toolkit in production environments.
+It includes multi-backend support for NVIDIA, Together.ai, and CPU processing.
 """
 
 import time

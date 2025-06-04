@@ -1,0 +1,96 @@
+# Together.ai Dedicated Endpoint Configuration
+# This template configures the application as an API-only backend
+# running on Together.ai's dedicated GPU infrastructure
+
+# API Authentication
+apiKey: "REPLACE_WITH_YOUR_TOGETHER_API_KEY"
+
+# Endpoint Configuration
+endpoint:
+  name: "sap-hana-ai-toolkit-backend"
+  description: "SAP HANA AI Toolkit Backend API with GPU Acceleration"
+  
+  # Hardware Configuration
+  hardware:
+    instanceType: "a100-40gb"  # Options: a100-40gb, a100-80gb, h100-80gb
+    count: 1                   # Number of GPUs
+    
+  # Scaling Configuration
+  scaling:
+    minReplicas: 1
+    maxReplicas: 2
+    targetUtilization: 80      # Percentage
+    
+  # Model Configuration
+  model:
+    # Base model to use
+    baseModel: "meta-llama/Llama-2-70b-chat-hf"
+    
+    # Quantization (optional)
+    quantization:
+      enabled: true
+      method: "awq"           # Options: awq, gptq, none
+      bits: 4                 # Options: 4, 8
+    
+    # Serving Configuration
+    serving:
+      maxTokens: 4096
+      maxBatchSize: 32
+      maxConcurrentRequests: 10
+      timeout: 120            # Seconds
+      
+  # Network Configuration
+  network:
+    privateAccess: false      # Set to true for VPC peering
+    allowedIPs: []            # Optional IP allowlist
+    
+  # Advanced Settings
+  advanced:
+    enableTensorRT: true
+    enableFlashAttention: true
+    enableKVCaching: true
+    enableContinuousBatching: true
+    schedulingStrategy: "fair" # Options: fair, fifo
+    
+# Environment Variables
+environment:
+  DEPLOYMENT_MODE: "api_only"
+  DEPLOYMENT_PLATFORM: "together_ai"
+  FRONTEND_URL: "https://sap-hana-ai-toolkit.vercel.app"
+  
+  # API Server Settings
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # Security Settings
+  AUTH_REQUIRED: "true"
+  CORS_ORIGINS: "*"
+  ENFORCE_HTTPS: "true"
+  
+  # Backend Configuration
+  ENABLE_GPU_ACCELERATION: "false"  # Let Together.ai handle GPU
+  ENABLE_TOGETHER_AI: "true"
+  TOGETHER_DEFAULT_MODEL: "meta-llama/Llama-2-70b-chat-hf"
+  TOGETHER_DEFAULT_EMBEDDING_MODEL: "togethercomputer/m2-bert-80M-8k-retrieval"
+  
+  # Performance Settings
+  CONNECTION_POOL_SIZE: "20"
+  REQUEST_TIMEOUT_SECONDS: "300"
+  MAX_REQUEST_SIZE_MB: "20"
+  RATE_LIMIT_PER_MINUTE: "500"
+  
+# Monitoring and Logging
+monitoring:
+  logs:
+    level: "INFO"
+    retention: 7              # Days
+  metrics:
+    enabled: true
+    prometheus: true
+    
+# Cost Management
+billing:
+  projectId: "sap-hana-toolkit"
+  alertThreshold: 500         # USD

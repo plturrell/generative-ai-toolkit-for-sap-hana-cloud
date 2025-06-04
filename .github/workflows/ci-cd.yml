@@ -6,6 +6,33 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      deployment_mode:
+        description: 'Deployment mode (full, api_only, ui_only)'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - api_only
+          - ui_only
+      backend_platform:
+        description: 'Backend platform (nvidia, together, btp)'
+        required: false
+        type: choice
+        options:
+          - nvidia
+          - together
+          - btp
+          - auto
+      frontend_platform:
+        description: 'Frontend platform (vercel, btp)'
+        required: false
+        type: choice
+        options:
+          - vercel
+          - btp
+          - auto
 
 jobs:
   test:
@@ -86,15 +113,142 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  deploy-to-btp:
-    name: Deploy to BTP (Production)
+  generate-config:
+    name: Generate Deployment Configuration
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Generate deployment configurations
+      id: generate-config
+      run: |
+        # Determine deployment parameters
+        DEPLOYMENT_MODE="${{ github.event.inputs.deployment_mode || 'full' }}"
+        BACKEND_PLATFORM="${{ github.event.inputs.backend_platform || 'auto' }}"
+        FRONTEND_PLATFORM="${{ github.event.inputs.frontend_platform || 'auto' }}"
+        
+        # Create output directory
+        mkdir -p deployment/generated
+        
+        # Generate configuration using deploy-config.py
+        python ./deployment/deploy-config.py \
+          --mode $DEPLOYMENT_MODE \
+          --backend $BACKEND_PLATFORM \
+          --frontend $FRONTEND_PLATFORM \
+          --output-dir ./deployment/generated
+        
+        # Save the platform detection results to environment variables
+        if [ "$BACKEND_PLATFORM" == "auto" ]; then
+          DETECTED_BACKEND=$(cat ./deployment/generated/detected_backend.txt)
+          echo "DETECTED_BACKEND=$DETECTED_BACKEND" >> $GITHUB_ENV
+          echo "Auto-detected backend platform: $DETECTED_BACKEND"
+        else
+          echo "DETECTED_BACKEND=$BACKEND_PLATFORM" >> $GITHUB_ENV
+        fi
+        
+        if [ "$FRONTEND_PLATFORM" == "auto" ]; then
+          DETECTED_FRONTEND=$(cat ./deployment/generated/detected_frontend.txt)
+          echo "DETECTED_FRONTEND=$DETECTED_FRONTEND" >> $GITHUB_ENV
+          echo "Auto-detected frontend platform: $DETECTED_FRONTEND"
+        else
+          echo "DETECTED_FRONTEND=$FRONTEND_PLATFORM" >> $GITHUB_ENV
+        fi
+    
+    - name: Upload configuration artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-configs
+        path: deployment/generated/
+
+  deploy-backend-nvidia:
+    name: Deploy Backend to NVIDIA
+    needs: generate-config
+    runs-on: ubuntu-latest
+    if: github.event.inputs.backend_platform == 'nvidia' || env.DETECTED_BACKEND == 'nvidia'
     environment: production
     
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Download configuration artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-configs
+        path: deployment/generated/
+    
+    - name: Setup NVIDIA NGC CLI
+      run: |
+        # Install NGC CLI
+        wget -O ngccli_linux.zip https://ngc.nvidia.com/downloads/ngccli_linux.zip
+        unzip -o ngccli_linux.zip
+        mkdir -p $HOME/.ngc
+        echo '${{ secrets.NVIDIA_API_KEY }}' > $HOME/.ngc/config
+        
+    - name: Deploy to NVIDIA LaunchPad
+      run: |
+        # Deploy using the nvidia-specific configuration
+        ./deployment/deploy.sh --mode api_only --platform nvidia --config ./deployment/generated/nvidia-backend.env
+        
+        # Update status
+        echo "Deployed backend to NVIDIA LaunchPad"
+
+  deploy-backend-together:
+    name: Deploy Backend to Together.ai
+    needs: generate-config
+    runs-on: ubuntu-latest
+    if: github.event.inputs.backend_platform == 'together' || env.DETECTED_BACKEND == 'together'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download configuration artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-configs
+        path: deployment/generated/
+    
+    - name: Setup Together.ai credentials
+      run: |
+        # Create credentials file
+        echo '${{ secrets.TOGETHER_API_KEY }}' > ./together-api-key.txt
+        
+    - name: Deploy to Together.ai
+      run: |
+        # Deploy using the together-specific configuration
+        ./deployment/deploy.sh --mode api_only --platform together --config ./deployment/generated/together-backend.yaml
+        
+        # Update status
+        echo "Deployed backend to Together.ai"
+
+  deploy-backend-btp:
+    name: Deploy Backend to SAP BTP
+    needs: generate-config
+    runs-on: ubuntu-latest
+    if: github.event.inputs.backend_platform == 'btp' || env.DETECTED_BACKEND == 'btp'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download configuration artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-configs
+        path: deployment/generated/
     
     - name: Install Cloud Foundry CLI
       run: |
@@ -108,15 +262,114 @@ jobs:
         cf auth "${{ secrets.CF_USERNAME }}" "${{ secrets.CF_PASSWORD }}"
         cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_SPACE }}"
     
-    - name: Deploy to Cloud Foundry
+    - name: Deploy to SAP BTP
       run: |
-        # Generate the manifest.yml file with environment variables
-        envsubst < deployment/cloudfoundry/manifest.yml.template > manifest.yml
-        cf push -f manifest.yml
-      env:
-        DEFAULT_LLM_MODEL: ${{ secrets.DEFAULT_LLM_MODEL }}
-        HANA_HOST: ${{ secrets.HANA_HOST }}
-        HANA_PORT: ${{ secrets.HANA_PORT }}
-        HANA_USER: ${{ secrets.HANA_USER }}
-        HANA_PASSWORD: ${{ secrets.HANA_PASSWORD }}
-        API_KEYS: ${{ secrets.API_KEYS }}
+        # Deploy using the BTP-specific configuration
+        ./deployment/deploy.sh --mode api_only --platform btp --config ./deployment/generated/btp-backend.env
+        
+        # Update status
+        echo "Deployed backend to SAP BTP"
+
+  deploy-frontend-vercel:
+    name: Deploy Frontend to Vercel
+    needs: generate-config
+    runs-on: ubuntu-latest
+    if: github.event.inputs.frontend_platform == 'vercel' || env.DETECTED_FRONTEND == 'vercel'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download configuration artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-configs
+        path: deployment/generated/
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+    
+    - name: Install Vercel CLI
+      run: npm install -g vercel
+    
+    - name: Deploy to Vercel
+      run: |
+        # Deploy using Vercel-specific configuration
+        vercel deploy --token ${{ secrets.VERCEL_TOKEN }} --prod --yes --local-config ./deployment/generated/vercel-frontend.json
+        
+        # Update status
+        echo "Deployed frontend to Vercel"
+
+  deploy-frontend-btp:
+    name: Deploy Frontend to SAP BTP
+    needs: generate-config
+    runs-on: ubuntu-latest
+    if: github.event.inputs.frontend_platform == 'btp' || env.DETECTED_FRONTEND == 'btp'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download configuration artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-configs
+        path: deployment/generated/
+    
+    - name: Install Cloud Foundry CLI
+      run: |
+        curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=7&source=github" | tar -zx
+        sudo mv cf7 /usr/local/bin/cf
+        cf --version
+    
+    - name: Login to Cloud Foundry
+      run: |
+        cf api ${{ secrets.CF_API }}
+        cf auth "${{ secrets.CF_USERNAME }}" "${{ secrets.CF_PASSWORD }}"
+        cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_SPACE }}"
+    
+    - name: Deploy to SAP BTP
+      run: |
+        # Deploy using the BTP-specific configuration
+        ./deployment/deploy.sh --mode ui_only --platform btp --config ./deployment/generated/btp-frontend.env
+        
+        # Update status
+        echo "Deployed frontend to SAP BTP"
+
+  deploy-full-btp:
+    name: Deploy Full Stack to SAP BTP
+    needs: generate-config
+    runs-on: ubuntu-latest
+    if: github.event.inputs.deployment_mode == 'full' && (github.event.inputs.backend_platform == 'btp' || env.DETECTED_BACKEND == 'btp') && (github.event.inputs.frontend_platform == 'btp' || env.DETECTED_FRONTEND == 'btp')
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download configuration artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: deployment-configs
+        path: deployment/generated/
+    
+    - name: Install Cloud Foundry CLI
+      run: |
+        curl -L "https://packages.cloudfoundry.org/stable?release=linux64-binary&version=7&source=github" | tar -zx
+        sudo mv cf7 /usr/local/bin/cf
+        cf --version
+    
+    - name: Login to Cloud Foundry
+      run: |
+        cf api ${{ secrets.CF_API }}
+        cf auth "${{ secrets.CF_USERNAME }}" "${{ secrets.CF_PASSWORD }}"
+        cf target -o "${{ secrets.CF_ORG }}" -s "${{ secrets.CF_SPACE }}"
+    
+    - name: Deploy Full Stack to SAP BTP
+      run: |
+        # Deploy full stack (both frontend and backend) to BTP
+        ./deployment/deploy.sh --mode full --platform btp --config ./deployment/generated/btp-full.env
+        
+        # Update status
+        echo "Deployed full stack to SAP BTP"

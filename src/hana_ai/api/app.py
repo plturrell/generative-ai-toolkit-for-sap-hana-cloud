@@ -14,7 +14,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from .config import settings
-from .routers import agents, dataframes, tools, vectorstore, config, developer
+from .routers import agents, dataframes, tools, vectorstore, config, developer, backend, health
 from .middleware import (
     RequestLoggerMiddleware, 
     SecurityHeadersMiddleware,
@@ -77,19 +77,55 @@ app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET_KEY)
 if not settings.DEVELOPMENT_MODE and settings.ENFORCE_HTTPS:
     app.add_middleware(HTTPSRedirectMiddleware)
 
-# Add CORS middleware
+# Add CORS middleware with dynamic configuration based on frontend URL
+# If FRONTEND_URL is specified, add it to allowed origins
+cors_origins = settings.CORS_ORIGINS.copy()
+if settings.FRONTEND_URL and settings.FRONTEND_URL not in cors_origins:
+    cors_origins.append(settings.FRONTEND_URL)
+    logger.info(f"Added frontend URL to CORS origins: {settings.FRONTEND_URL}")
+
+# If we're in API_ONLY mode and no specific origins are set, allow all origins by default
+if settings.DEPLOYMENT_MODE == "api_only" and not cors_origins:
+    cors_origins = ["*"]
+    logger.info("API-only mode with no CORS origins specified, allowing all origins")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-Process-Time", "X-Backend-Used"],
 )
 
-# Mount static files
+# Mount static files and UI components only if not in API-only mode
 import os
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+from .env_constants import DEPLOYMENT_MODE_API_ONLY, DEPLOYMENT_MODE_UI_ONLY
+
+# Setup UI proxy route if we're in UI-only mode and API_BASE_URL is specified
+if settings.DEPLOYMENT_MODE == DEPLOYMENT_MODE_UI_ONLY and settings.API_BASE_URL:
+    from fastapi.responses import RedirectResponse
+    
+    @app.get("/api/v1/{path:path}", include_in_schema=False)
+    async def proxy_api_request(path: str, request: Request):
+        """Proxy API requests to the specified API_BASE_URL."""
+        target_url = f"{settings.API_BASE_URL}/api/v1/{path}"
+        # For GET requests, redirect to the target URL
+        if request.method == "GET":
+            return RedirectResponse(url=target_url)
+        # For other methods, return information about where to send the request
+        return {
+            "message": "API endpoint is located on a separate backend server",
+            "api_url": target_url,
+            "documentation": f"{settings.API_BASE_URL}/api/docs"
+        }
+    
+    logger.info(f"UI-only mode configured with API proxy to: {settings.API_BASE_URL}")
+
+# Only mount static files if we're not in API-only mode
+if settings.DEPLOYMENT_MODE != DEPLOYMENT_MODE_API_ONLY:
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Register routers
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["Agents"])
@@ -97,36 +133,59 @@ app.include_router(dataframes.router, prefix="/api/v1/dataframes", tags=["DataFr
 app.include_router(tools.router, prefix="/api/v1/tools", tags=["Tools"])
 app.include_router(vectorstore.router, prefix="/api/v1/vectorstore", tags=["VectorStore"])
 app.include_router(config.router, prefix="/api/v1/config", tags=["Configuration"])
+app.include_router(backend.router, prefix="/api/v1/backend", tags=["Backend"])
 app.include_router(developer.router, prefix="/api/v1/developer", tags=["Developer"])
+app.include_router(health.router, prefix="/api/v1/health", tags=["Health"])
 
-# Admin panel
-@app.get("/admin", response_class=HTMLResponse, tags=["Admin"])
-async def admin_panel():
-    """Serve the admin panel UI."""
-    admin_html_path = os.path.join(static_dir, "admin", "index.html")
-    with open(admin_html_path, "r") as f:
-        return f.read()
+# Only include UI endpoints if we're not in API-only mode
+if settings.DEPLOYMENT_MODE != DEPLOYMENT_MODE_API_ONLY:
+    # Admin panel
+    @app.get("/admin", response_class=HTMLResponse, tags=["Admin"])
+    async def admin_panel():
+        """Serve the admin panel UI."""
+        admin_html_path = os.path.join(static_dir, "admin", "index.html")
+        with open(admin_html_path, "r") as f:
+            return f.read()
 
-# Developer Studio
-@app.get("/developer", response_class=HTMLResponse, tags=["Developer"])
-async def developer_studio():
-    """Serve the developer studio UI."""
-    developer_html_path = os.path.join(static_dir, "developer", "index.html")
-    with open(developer_html_path, "r") as f:
-        return f.read()
+    # Developer Studio
+    @app.get("/developer", response_class=HTMLResponse, tags=["Developer"])
+    async def developer_studio():
+        """Serve the developer studio UI."""
+        developer_html_path = os.path.join(static_dir, "developer", "index.html")
+        with open(developer_html_path, "r") as f:
+            return f.read()
 
-# Root endpoint - redirect to developer studio
-@app.get("/", tags=["Root"])
-async def root():
-    """Redirect to developer studio."""
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/developer")
+    # Root endpoint - redirect to developer studio
+    @app.get("/", tags=["Root"])
+    async def root():
+        """Redirect to developer studio."""
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/developer")
+else:
+    # API-only mode root endpoint
+    @app.get("/", tags=["Root"])
+    async def root():
+        """API information endpoint."""
+        return {
+            "name": "SAP HANA AI Toolkit API",
+            "version": "1.0.0",
+            "mode": "api_only",
+            "description": "REST API for the Generative AI Toolkit for SAP HANA Cloud",
+            "docs_url": "/api/docs" if settings.DEVELOPMENT_MODE else None
+        }
 
 # Startup and shutdown events
 @app.on_event("startup")
 async def startup():
     """Initialize resources on application startup."""
-    logger.info("Starting HANA AI Toolkit API")
+    from .environment import detect_deployment_platform, apply_platform_defaults
+    
+    # Detect deployment platform and apply platform-specific defaults
+    platform = detect_deployment_platform()
+    logger.info(f"Starting HANA AI Toolkit API on platform: {platform}")
+    
+    # Apply platform-specific configuration defaults
+    apply_platform_defaults(settings)
     
     # Set NVIDIA environment variables for optimal GPU performance
     if settings.ENABLE_GPU_ACCELERATION:

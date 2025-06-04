@@ -80,6 +80,12 @@ class Settings(BaseSettings):
     DEFAULT_LLM_TEMPERATURE: float = Field(default=0.0, env="DEFAULT_LLM_TEMPERATURE")
     DEFAULT_LLM_MAX_TOKENS: int = Field(default=1000, env="DEFAULT_LLM_MAX_TOKENS")
     
+    # Deployment Configuration
+    DEPLOYMENT_MODE: str = Field(default=DEFAULT_DEPLOYMENT_MODE, env="DEPLOYMENT_MODE")
+    API_BASE_URL: str = Field(default=DEFAULT_API_BASE_URL, env="API_BASE_URL")
+    FRONTEND_URL: str = Field(default=DEFAULT_FRONTEND_URL, env="FRONTEND_URL")
+    DEPLOYMENT_PLATFORM: str = Field(default="auto", env="DEPLOYMENT_PLATFORM")  # auto, nvidia, together_ai, btp, vercel
+    
     # NVIDIA GPU Optimization Settings - Basic
     ENABLE_GPU_ACCELERATION: bool = Field(default=True, env="ENABLE_GPU_ACCELERATION")
     NVIDIA_VISIBLE_DEVICES: str = Field(default=DEFAULT_NVIDIA_VISIBLE_DEVICES, env="NVIDIA_VISIBLE_DEVICES")

@@ -110,3 +110,16 @@ DEFAULT_CANARY_WEIGHT = 20  # percentage
 DEFAULT_CANARY_STEP_PERCENTAGE = 20
 DEFAULT_CANARY_PROMOTION_DELAY = 3600  # seconds (1 hour)
 DEFAULT_CANARY_ROLLBACK_THRESHOLD = 5  # number of errors before rollback
+
+# Configuration settings
+DEFAULT_CONFIG_DIR = "/etc/hana-ai-toolkit/config"
+
+# Deployment modes
+DEPLOYMENT_MODE_FULL = "full"            # Both API and UI components
+DEPLOYMENT_MODE_API_ONLY = "api_only"    # Only API components without UI
+DEPLOYMENT_MODE_UI_ONLY = "ui_only"      # Only UI components, connects to external API
+DEFAULT_DEPLOYMENT_MODE = DEPLOYMENT_MODE_FULL
+
+# Frontend/Backend configuration
+DEFAULT_API_BASE_URL = ""                # Default empty for same-origin
+DEFAULT_FRONTEND_URL = ""                # Default empty for same-origin

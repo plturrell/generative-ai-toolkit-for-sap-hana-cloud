@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "buildCommand": "pip install -r api/requirements-vercel.txt",
+  "outputDirectory": "public",
+  "env": {
+    "DEPLOYMENT_MODE": "ui_only",
+    "DEPLOYMENT_PLATFORM": "vercel",
+    "API_BASE_URL": "https://your-nvidia-backend-url.example.com",
+    
+    "API_HOST": "0.0.0.0",
+    "API_PORT": "8000",
+    "LOG_LEVEL": "INFO",
+    "LOG_FORMAT": "json",
+    "AUTH_REQUIRED": "true",
+    
+    "ENABLE_GPU_ACCELERATION": "false",
+    "ENABLE_TOGETHER_AI": "true",
+    
+    "ENVIRONMENT": "production",
+    "DEVELOPMENT_MODE": "false",
+    "CORS_ORIGINS": "https://*.vercel.app,https://*.sap.com",
+    "ENFORCE_HTTPS": "true",
+    "RESTRICT_EXTERNAL_CALLS": "false"
+  },
+  "build": {
+    "env": {
+      "PYTHON_VERSION": "3.9"
+    }
+  },
+  "github": {
+    "silent": true,
+    "autoJobCancelation": true,
+    "enabled": true
+  },
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; connect-src 'self' https://your-nvidia-backend-url.example.com; img-src 'self'; style-src 'self';"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health.py"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ]
+}
