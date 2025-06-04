@@ -9,26 +9,6 @@
       "maxDuration": 60
     }
   },
-  "routes": [
-    { "handle": "filesystem" },
-    { 
-      "src": "/health",
-      "dest": "/api/health.py"
-    },
-    {
-      "src": "/metrics",
-      "dest": "/api/metrics.py",
-      "methods": ["GET"]
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
   "env": {
     "API_HOST": "0.0.0.0",
     "API_PORT": "8000",
@@ -102,6 +82,18 @@
     {
       "source": "/",
       "destination": "/api/index.py"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health.py"
+    },
+    {
+      "source": "/metrics",
+      "destination": "/api/metrics.py"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     }
   ]
 }
