@@ -16,6 +16,7 @@
     
     "ENABLE_GPU_ACCELERATION": "true",
     "ENABLE_TOGETHER_AI": "true",
+    "TOGETHER_API_KEY": "8c2b1633069ad5a567299c19acb8db9cb2e0098d78d24556b1749f0149fcc729",
     "TOGETHER_DEFAULT_MODEL": "meta-llama/Llama-2-70b-chat-hf",
     "TOGETHER_DEFAULT_EMBEDDING_MODEL": "togethercomputer/m2-bert-80M-8k-retrieval",
     "TOGETHER_TIMEOUT": "60.0",
