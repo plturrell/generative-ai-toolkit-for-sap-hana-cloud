@@ -48,7 +48,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
-T4_GPU_BACKEND_URL = os.getenv("T4_GPU_BACKEND_URL", "https://jupyter0-513syzm60.brevlab.com")
+T4_GPU_BACKEND_URL = os.getenv("T4_GPU_BACKEND_URL", "https://jupyter0-4ckg1m6x0.brevlab.com")
 JWT_SECRET = os.getenv("JWT_SECRET", "sap-hana-generative-ai-t4-integration-secret-key-2025")  # Should be set in environment variables
 VERCEL_URL = os.getenv("VERCEL_URL", "")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")

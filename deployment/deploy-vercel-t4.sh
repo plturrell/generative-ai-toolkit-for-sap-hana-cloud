@@ -4,7 +4,7 @@
 set -e
 
 # Default settings
-BACKEND_URL=${BACKEND_URL:-"https://jupyter0-513syzm60.brevlab.com"}
+BACKEND_URL=${BACKEND_URL:-"https://jupyter0-4ckg1m6x0.brevlab.com"}
 ENVIRONMENT=${ENVIRONMENT:-"development"}
 VERCEL_TOKEN=${VERCEL_TOKEN:-""}
 VERCEL_PROJECT=${VERCEL_PROJECT:-"sap-hana-generative-ai-toolkit"}

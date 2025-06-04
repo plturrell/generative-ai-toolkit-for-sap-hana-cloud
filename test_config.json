@@ -1,5 +1,5 @@
 {
-    "api_base_url": "http://localhost:8000",
+    "api_base_url": "https://jupyter0-4ckg1m6x0.brevlab.com",
     "results_dir": "test_results",
     "test_timeout": 300,
     "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
