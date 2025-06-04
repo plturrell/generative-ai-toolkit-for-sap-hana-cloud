@@ -11,6 +11,12 @@ if ! command -v nvidia-smi &> /dev/null; then
   exit 1
 fi
 
+# Check for required packages
+if ! python3 -c "import yaml" &> /dev/null; then
+  echo "Warning: PyYAML package is missing. Installing it temporarily..."
+  python3 -m pip install --user pyyaml
+fi
+
 # Check if T4 GPU is present
 if ! nvidia-smi --query-gpu=gpu_name --format=csv,noheader | grep -i "T4" &> /dev/null; then
   echo "Warning: NVIDIA T4 GPU not detected. This configuration is optimized for T4 GPUs."

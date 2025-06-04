@@ -11,12 +11,24 @@ import sys
 import argparse
 import shutil
 import json
-import yaml
 import logging
 import platform
 import subprocess
 import re
 from typing import Dict, Any, List, Optional, Tuple
+
+# Try to import yaml, install if not available
+try:
+    import yaml
+except ImportError:
+    print("PyYAML not found. Attempting to install...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pyyaml"])
+        import yaml
+    except Exception as e:
+        print(f"Error installing PyYAML: {e}")
+        print("Please manually install PyYAML: pip install pyyaml")
+        sys.exit(1)
 
 # Configure logging
 logging.basicConfig(
