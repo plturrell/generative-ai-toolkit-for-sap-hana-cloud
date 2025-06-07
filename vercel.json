@@ -1,54 +1,38 @@
 {
   "version": 2,
-  "buildCommand": "pip install -r requirements-vercel.txt",
-  "outputDirectory": "public",
+  "builds": [
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/vercel_integration.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/vercel_integration.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    }
+  ],
   "env": {
-    "DEPLOYMENT_MODE": "ui_only",
-    "DEPLOYMENT_PLATFORM": "vercel",
-    "API_BASE_URL": "https://api.together.xyz/v1/sap-hana-ai-toolkit",
-    "API_HOST": "0.0.0.0",
-    "API_PORT": "8000",
+    "T4_GPU_BACKEND_URL": "https://jupyter0-4ckg1m6x0.brevlab.com",
+    "ENVIRONMENT": "production",
+    "DEFAULT_TIMEOUT": "60",
+    "PYTHON_VERSION": "3.9",
     "LOG_LEVEL": "INFO",
     "LOG_FORMAT": "json",
-    "AUTH_REQUIRED": "true",
-    "PROMETHEUS_ENABLED": "true",
-    "RATE_LIMIT_PER_MINUTE": "100",
-    "CONNECTION_POOL_SIZE": "20",
-    "REQUEST_TIMEOUT_SECONDS": "60",
-    "MAX_REQUEST_SIZE_MB": "10",
-    
-    "ENABLE_GPU_ACCELERATION": "false",
-    "ENABLE_TOGETHER_AI": "true",
-    "TOGETHER_API_KEY": "tgp_v1_Yxsd-Ud8_JfNVm5lcnSmXvvWpNBMPq1_KY6ZxQLRZYI",
-    "TOGETHER_DEFAULT_MODEL": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    "TOGETHER_DEFAULT_EMBEDDING_MODEL": "togethercomputer/m2-bert-80M-32k-retrieval",
-    "TOGETHER_TIMEOUT": "60.0",
-    
-    "ENABLE_TENSORRT": "false",
-    "ENABLE_TRANSFORMER_ENGINE": "false",
-    "ENABLE_GPTQ": "false",
-    "ENABLE_AWQ": "false",
-    "ENABLE_FP8": "false",
-    "ENABLE_FLASH_ATTENTION": "false",
-    
-    "ENVIRONMENT": "production",
-    "DEVELOPMENT_MODE": "false",
+    "AUTH_REQUIRED": "false",
     "CORS_ORIGINS": "https://*.vercel.app,https://*.sap.com",
-    "ENFORCE_HTTPS": "true",
-    "RESTRICT_EXTERNAL_CALLS": "false",
-    "DOMAIN_SPECIFIC_CALIBRATION": "true"
+    "ENABLE_GPU_ACCELERATION": "true",
+    "ENABLE_TENSORRT": "true"
   },
-  "build": {
-    "env": {
-      "PYTHON_VERSION": "3.9"
-    }
-  },
-  "github": {
-    "silent": true,
-    "autoJobCancelation": true,
-    "enabled": true
-  },
-  "regions": ["iad1"],
+  "regions": ["sfo1", "iad1"],
   "headers": [
     {
       "source": "/(.*)",
@@ -66,32 +50,18 @@
           "value": "1; mode=block"
         },
         {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
           "key": "Strict-Transport-Security",
           "value": "max-age=31536000; includeSubDomains"
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; connect-src 'self' https://api.together.xyz; img-src 'self'; style-src 'self';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://jupyter0-4ckg1m6x0.brevlab.com; img-src 'self' data:; style-src 'self' 'unsafe-inline';"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/health",
-      "destination": "/api/health.py"
-    },
-    {
-      "source": "/metrics",
-      "destination": "/api/metrics.py"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
     }
   ]
 }

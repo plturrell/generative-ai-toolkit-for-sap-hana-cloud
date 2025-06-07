@@ -3,130 +3,1187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Builder - SAP HANA AI Toolkit</title>
+    <title>Dashboard - SAP HANA AI Toolkit</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/developer-studio.css">
+    <link rel="stylesheet" href="../css/visual-refinements.css">
     <link rel="icon" type="image/png" href="../favicon.ico">
     <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
+        :root {
+            --primary: #0a6ed1;
+            --primary-dark: #0854a0;
+            --secondary: #2a9d8f;
+            --light: #f5f7fa;
+            --dark: #1c2833;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --white: #ffffff;
+            --gray: #6c757d;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
         }
         
         .dashboard-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
         }
         
         .dashboard-header {
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .dashboard-subtitle {
+            font-size: 1.1rem;
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+        }
+        
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .stat-card-header {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            background-color: #0e6efd;
-            color: white;
+            margin-bottom: 1rem;
         }
         
-        .dashboard-logo {
+        .stat-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray);
+        }
+        
+        .stat-card-icon {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+        
+        .stat-card-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card-subtext {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .trend-up {
+            color: var(--success);
+        }
+        
+        .trend-down {
+            color: var(--danger);
+        }
+        
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .dashboard-card {
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .dashboard-card-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
         }
         
-        .dashboard-logo img {
-            height: 32px;
-            margin-right: 0.5rem;
+        .dashboard-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
         }
         
-        .dashboard-actions {
+        .dashboard-card-actions {
             display: flex;
             gap: 0.5rem;
         }
         
-        .dashboard-content {
-            flex: 1;
-            overflow: auto;
-            padding: 1rem;
-            background-color: #f5f5f5;
+        .btn-action {
+            background-color: var(--light);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--gray);
+            transition: var(--transition);
         }
         
-        #dashboard-builder {
-            height: 100%;
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        .btn-action:hover {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+        
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .task-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--light);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .task-checkbox.checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .task-checkbox.checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            color: var(--white);
+            font-size: 0.7rem;
+        }
+        
+        .task-content {
+            flex-grow: 1;
+        }
+        
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .task-checkbox.checked + .task-content .task-title {
+            text-decoration: line-through;
+            color: var(--gray);
+        }
+        
+        .task-meta {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .task-tag {
+            background-color: var(--light);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .resource-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--light);
+            transition: var(--transition);
+        }
+        
+        .resource-item:hover {
+            background-color: var(--light);
+        }
+        
+        .resource-item:last-child {
+            border-bottom: none;
+        }
+        
+        .resource-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary);
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 1.2rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .resource-content {
+            flex-grow: 1;
+        }
+        
+        .resource-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .resource-description {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .demo-result {
+            margin-top: 2rem;
+        }
+        
+        .demo-result-header {
+            margin-bottom: 1rem;
+        }
+        
+        .demo-result-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .demo-result-subtitle {
+            font-size: 1rem;
+            color: var(--gray);
+        }
+        
+        .demo-analysis {
+            background-color: var(--light);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .demo-recommendations {
+            margin-top: 2rem;
+        }
+        
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .recommendation-icon {
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+            margin-top: 0.2rem;
+        }
+        
+        .recommendation-text {
+            flex-grow: 1;
+        }
+        
+        .demo-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--light);
+        }
+        
+        .data-table th {
+            font-weight: 600;
+            background-color: var(--light);
+        }
+        
+        .data-table tr:hover {
+            background-color: var(--light);
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <header class="dashboard-header">
-            <div class="dashboard-logo">
-                <img src="../img/sap-logo-white.svg" alt="SAP Logo">
-                <span>HANA AI Toolkit Dashboard Builder</span>
+    <!-- Header -->
+    <header class="developer-header">
+        <div class="developer-logo">
+            <img src="../img/sap-logo-white.svg" alt="SAP Logo">
+            <span>HANA AI Toolkit Dashboard</span>
+        </div>
+        <div class="developer-nav">
+            <div class="developer-nav-item" id="btn-dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
             </div>
-            <div class="dashboard-actions">
-                <button id="back-to-studio" class="btn btn-outline-light">
-                    <i class="fas fa-arrow-left"></i>
-                    Back to Studio
+            <div class="developer-nav-item" id="btn-studio">
+                <i class="fas fa-project-diagram"></i>
+                <span>Developer Studio</span>
+            </div>
+            <div class="developer-nav-item" id="btn-help">
+                <i class="fas fa-question-circle"></i>
+                <span>Help</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard content -->
+    <div class="dashboard-container active-content" id="dashboard-content">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Dashboard</h1>
+            <p class="dashboard-subtitle">Welcome to your SAP HANA AI Toolkit Dashboard. Here's your quick overview.</p>
+        </div>
+
+        <!-- Demo Results Section (conditionally shown) -->
+        <div id="demoResults" class="demo-result">
+            <div class="demo-result-header">
+                <h2 class="demo-result-title">Your Demo Results</h2>
+                <p class="demo-result-subtitle">Here's what we found based on your sales data analysis</p>
+            </div>
+
+            <!-- Data Sample -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">Data Sample</h3>
+                    <div class="dashboard-card-actions">
+                        <button class="btn-action" title="Download CSV">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn-action" title="View All Data">
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="demoDataTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product</th>
+                                <th>Region</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Demo Analysis -->
+            <div class="dashboard-card" style="margin-top: 1.5rem;">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">Analysis</h3>
+                    <div class="dashboard-card-actions">
+                        <button class="btn-action" title="Export">
+                            <i class="fas fa-file-export"></i>
+                        </button>
+                        <button class="btn-action" title="Share">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="demo-analysis" id="demoAnalysis">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Demo Visualization -->
+            <div class="dashboard-card" style="margin-top: 1.5rem;">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title" id="demoVisualizationTitle">Sales Trend Over Time</h3>
+                    <div class="dashboard-card-actions">
+                        <button class="btn-action" title="Download">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn-action" title="Fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="chart-container" id="demoChart">
+                    <!-- Chart will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Demo Recommendations -->
+            <div class="dashboard-card" style="margin-top: 1.5rem;">
+                <div class="dashboard-card-header">
+                    <h3 class="dashboard-card-title">Recommendations</h3>
+                </div>
+                <div class="demo-recommendations" id="demoRecommendations">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Demo Actions -->
+            <div class="demo-actions">
+                <button class="btn btn-primary" id="btnGoToStudio">
+                    <i class="fas fa-code"></i>
+                    <span>Open in Developer Studio</span>
+                </button>
+                <button class="btn btn-outline" id="btnTryDifferent">
+                    <i class="fas fa-redo"></i>
+                    <span>Try Different Dataset</span>
                 </button>
             </div>
-        </header>
+        </div>
 
-        <!-- Main content -->
-        <div class="dashboard-content">
-            <div id="dashboard-builder"></div>
+        <!-- Regular Dashboard Stats (shown when no demo) -->
+        <div id="regularDashboard" style="display: none;">
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-title">Active Models</div>
+                        <div class="stat-card-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card-value">12</div>
+                    <div class="stat-card-subtext">
+                        <span class="trend-up">
+                            <i class="fas fa-arrow-up"></i> 15%
+                        </span>
+                        from last month
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-title">API Calls</div>
+                        <div class="stat-card-icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card-value">8,439</div>
+                    <div class="stat-card-subtext">
+                        <span class="trend-up">
+                            <i class="fas fa-arrow-up"></i> 23%
+                        </span>
+                        from last week
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-title">Response Time</div>
+                        <div class="stat-card-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card-value">95<span style="font-size: 1.5rem;">ms</span></div>
+                    <div class="stat-card-subtext">
+                        <span class="trend-down">
+                            <i class="fas fa-arrow-down"></i> 12%
+                        </span>
+                        improvement
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-title">Model Accuracy</div>
+                        <div class="stat-card-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card-value">94<span style="font-size: 1.5rem;">%</span></div>
+                    <div class="stat-card-subtext">
+                        <span class="trend-up">
+                            <i class="fas fa-arrow-up"></i> 2%
+                        </span>
+                        from last version
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-row">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div class="dashboard-card-title">Performance Overview</div>
+                        <div class="dashboard-card-actions">
+                            <button class="btn-action" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="btn-action" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="btn-action" title="More Options">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <!-- Chart would be rendered here -->
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray);">
+                            Performance chart will be displayed here
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div class="dashboard-card-title">Recent Tasks</div>
+                        <div class="dashboard-card-actions">
+                            <button class="btn-action" title="Add Task">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <ul class="task-list">
+                        <li class="task-item">
+                            <div class="task-checkbox checked"></div>
+                            <div class="task-content">
+                                <div class="task-title">Optimize sales forecast model</div>
+                                <div class="task-meta">
+                                    <div class="task-tag">Forecast</div>
+                                    <div>Completed 2h ago</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="task-item">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Create customer segmentation report</div>
+                                <div class="task-meta">
+                                    <div class="task-tag">Analysis</div>
+                                    <div>Due in 2 days</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="task-item">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Integrate new data source</div>
+                                <div class="task-meta">
+                                    <div class="task-tag">Development</div>
+                                    <div>Due today</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="task-item">
+                            <div class="task-checkbox"></div>
+                            <div class="task-content">
+                                <div class="task-title">Review model performance</div>
+                                <div class="task-meta">
+                                    <div class="task-tag">Monitoring</div>
+                                    <div>Due in 3 days</div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="dashboard-row">
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div class="dashboard-card-title">Model Performance</div>
+                        <div class="dashboard-card-actions">
+                            <button class="btn-action" title="Filter">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                            <button class="btn-action" title="More Options">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <!-- Chart would be rendered here -->
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray);">
+                            Model performance chart will be displayed here
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div class="dashboard-card-title">Resources</div>
+                    </div>
+                    <div class="resource-list">
+                        <div class="resource-item">
+                            <div class="resource-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="resource-content">
+                                <div class="resource-title">Documentation</div>
+                                <div class="resource-description">Access complete API and usage guides</div>
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <div class="resource-icon">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <div class="resource-content">
+                                <div class="resource-title">Code Examples</div>
+                                <div class="resource-description">Sample code for common use cases</div>
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <div class="resource-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div class="resource-content">
+                                <div class="resource-title">Tutorials</div>
+                                <div class="resource-description">Step-by-step guides for beginners</div>
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <div class="resource-icon">
+                                <i class="fas fa-comment-alt"></i>
+                            </div>
+                            <div class="resource-content">
+                                <div class="resource-title">Support</div>
+                                <div class="resource-description">Get help with any issues</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Load React -->
-    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Load Custom Scripts -->
-    <script src="js/error-handler.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/api-client.js"></script>
+    <!-- Load Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Load React Components -->
-    <script type="text/babel" src="js/react-components.js"></script>
-    <script type="text/babel" src="js/dashboard-builder.js"></script>
-
-    <!-- Initialize Dashboard Builder -->
+    <!-- Load unified motion system -->
+    <script src="../js/motion-system.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Initialize API client
-                const apiClient = new APIClient({
-                    baseUrl: window.location.origin,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                // Initialize Dashboard Builder
-                DashboardBuilder.render('dashboard-builder', { apiClient });
-
-                // Back to studio button
-                const backToStudioButton = document.getElementById('back-to-studio');
-                if (backToStudioButton) {
-                    backToStudioButton.addEventListener('click', () => {
-                        window.location.href = 'index.html';
+            // Check session storage for demo data
+            const demoDataType = sessionStorage.getItem('demoDataType');
+            const demoDataSize = sessionStorage.getItem('demoDataSize');
+            const demoQuestion = sessionStorage.getItem('demoQuestion');
+            
+            // Check if we have demo data from welcome page
+            if (demoDataType && demoDataSize && demoQuestion) {
+                // Show demo results
+                document.getElementById('demoResults').style.display = 'block';
+                document.getElementById('regularDashboard').style.display = 'none';
+                
+                try {
+                    // Fetch demo results from API
+                    const response = await fetch('/api/v1/demo/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            data_type: demoDataType,
+                            data_size: demoDataSize,
+                            question: demoQuestion
+                        })
                     });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to generate demo');
+                    }
+                    
+                    const demoData = await response.json();
+                    
+                    // Populate data table
+                    const tableBody = document.getElementById('demoDataTable').querySelector('tbody');
+                    tableBody.innerHTML = '';
+                    
+                    demoData.data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        
+                        // Format based on data type
+                        if (demoDataType === 'sales') {
+                            const date = new Date(row.date).toLocaleDateString();
+                            tr.innerHTML = `
+                                <td>${date}</td>
+                                <td>${row.product}</td>
+                                <td>${row.region}</td>
+                                <td>${row.quantity}</td>
+                                <td>$${row.unit_price.toFixed(2)}</td>
+                                <td>$${row.total_amount.toFixed(2)}</td>
+                            `;
+                        } else if (demoDataType === 'inventory') {
+                            const date = new Date(row.date).toLocaleDateString();
+                            tr.innerHTML = `
+                                <td>${date}</td>
+                                <td>${row.warehouse}</td>
+                                <td>${row.product}</td>
+                                <td>${row.quantity_in_stock}</td>
+                                <td>${row.min_stock_level}</td>
+                                <td>${row.max_stock_level}</td>
+                            `;
+                        } else if (demoDataType === 'customer') {
+                            const joinDate = new Date(row.join_date).toLocaleDateString();
+                            tr.innerHTML = `
+                                <td>${row.customer_id}</td>
+                                <td>${joinDate}</td>
+                                <td>${row.region}</td>
+                                <td>${row.segment}</td>
+                                <td>${row.total_orders}</td>
+                                <td>$${row.total_spend.toFixed(2)}</td>
+                            `;
+                        }
+                        
+                        tableBody.appendChild(tr);
+                    });
+                    
+                    // Populate analysis
+                    document.getElementById('demoAnalysis').innerHTML = demoData.analysis.replace(/\n/g, '<br>');
+                    
+                    // Populate recommendations
+                    const recommendationsContainer = document.getElementById('demoRecommendations');
+                    recommendationsContainer.innerHTML = '';
+                    
+                    demoData.recommendations.forEach(recommendation => {
+                        const div = document.createElement('div');
+                        div.className = 'recommendation-item';
+                        div.innerHTML = `
+                            <div class="recommendation-icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="recommendation-text">
+                                ${recommendation}
+                            </div>
+                        `;
+                        recommendationsContainer.appendChild(div);
+                    });
+                    
+                    // Set visualization title
+                    document.getElementById('demoVisualizationTitle').textContent = demoData.visualization_type === 'line_chart' 
+                        ? 'Sales Trend Over Time' 
+                        : demoData.visualization_type === 'pie_chart' 
+                            ? 'Revenue by Customer Segment'
+                            : 'Inventory Distribution';
+                    
+                    // Create visualization
+                    renderChart(demoData.visualization_type, demoData.visualization_data);
+                    
+                } catch (error) {
+                    console.error('Failed to load demo data:', error);
                 }
-
-                console.log('Dashboard Builder initialized successfully');
-            } catch (error) {
-                console.error('Failed to initialize Dashboard Builder:', error);
-                alert(`Failed to initialize Dashboard Builder: ${error.message}`);
+            } else {
+                // Show regular dashboard
+                document.getElementById('demoResults').style.display = 'none';
+                document.getElementById('regularDashboard').style.display = 'block';
             }
+            
+            // Handle button clicks
+            document.getElementById('btnGoToStudio').addEventListener('click', () => {
+                window.location.href = '/developer';
+            });
+            
+            document.getElementById('btnTryDifferent').addEventListener('click', () => {
+                // Clear demo data and redirect to welcome page
+                sessionStorage.removeItem('demoDataType');
+                sessionStorage.removeItem('demoDataSize');
+                sessionStorage.removeItem('demoQuestion');
+                window.location.href = '/welcome';
+            });
+            
+            document.getElementById('btn-studio').addEventListener('click', () => {
+                window.location.href = '/developer';
+            });
+            
+            // Handle task checkboxes
+            document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('click', () => {
+                    checkbox.classList.toggle('checked');
+                });
+            });
         });
+        
+        function renderChart(type, data) {
+            const ctx = document.getElementById('demoChart').getContext('2d');
+            let chart;
+            
+            // Enhanced color palette for visual harmony
+            const harmonizedColors = [
+                '#0a6ed1', // Primary blue
+                '#2a9d8f', // Teal
+                '#e76f51', // Terracotta
+                '#e9c46a', // Gold
+                '#264653', // Dark teal
+                '#f4a261', // Peach
+                '#bb3e03', // Rust
+                '#006d77', // Dark cyan
+                '#7209b7', // Purple
+                '#3a0ca3'  // Indigo
+            ];
+            
+            // Enhanced shadow for depth
+            const addShadowPlugin = {
+                id: 'chartShadow',
+                beforeDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 4;
+                }
+            };
+            
+            // Common animation options for fluid transitions
+            const enhancedAnimation = {
+                duration: 850,
+                easing: 'easeOutQuart',
+                delay: (context) => {
+                    if (context.type === 'data') {
+                        return context.dataIndex * 15 + context.datasetIndex * 50;
+                    }
+                    return 0;
+                }
+            };
+            
+            // Enhanced tooltip styling for visual refinement
+            const enhancedTooltip = {
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                titleColor: '#212529',
+                bodyColor: '#495057',
+                borderColor: '#dde1e6',
+                borderWidth: 1,
+                cornerRadius: 6,
+                boxPadding: 8,
+                titleFont: {
+                    weight: '600',
+                    size: 13
+                },
+                bodyFont: {
+                    size: 12
+                },
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        
+                        let value = context.parsed;
+                        if (type === 'pie_chart') {
+                            value = context.parsed;
+                        } else if (context.parsed.y !== undefined) {
+                            value = context.parsed.y;
+                        }
+                        
+                        if (typeof value === 'number') {
+                            if (value > 1000) {
+                                return label + value.toLocaleString();
+                            } else {
+                                return label + value.toFixed(1);
+                            }
+                        }
+                        return label + value;
+                    }
+                }
+            };
+            
+            if (type === 'line_chart') {
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.x,
+                        datasets: [{
+                            label: data.series_name,
+                            data: data.y,
+                            borderColor: harmonizedColors[0],
+                            backgroundColor: 'rgba(10, 110, 209, 0.1)',
+                            borderWidth: 2.5,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: harmonizedColors[0],
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: harmonizedColors[0],
+                            pointHoverBorderColor: '#ffffff',
+                            pointHoverBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: enhancedAnimation,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title,
+                                font: {
+                                    size: 16,
+                                    weight: '500'
+                                },
+                                padding: {
+                                    top: 10,
+                                    bottom: 20
+                                }
+                            },
+                            tooltip: enhancedTooltip,
+                            chartShadow: {}
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: data.x_label,
+                                    font: {
+                                        weight: '500'
+                                    },
+                                    padding: {
+                                        top: 10
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: data.y_label,
+                                    font: {
+                                        weight: '500'
+                                    },
+                                    padding: {
+                                        bottom: 10
+                                    }
+                                },
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    lineWidth: 1
+                                }
+                            }
+                        }
+                    },
+                    plugins: [addShadowPlugin]
+                });
+            } else if (type === 'pie_chart') {
+                chart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: data.data.map(item => item.name),
+                        datasets: [{
+                            data: data.data.map(item => item.y),
+                            backgroundColor: harmonizedColors,
+                            borderColor: '#ffffff',
+                            borderWidth: 3,
+                            hoverBorderColor: '#ffffff',
+                            hoverBorderWidth: 4,
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            ...enhancedAnimation,
+                            animateRotate: true,
+                            animateScale: true
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title,
+                                font: {
+                                    size: 16,
+                                    weight: '500'
+                                },
+                                padding: {
+                                    top: 10,
+                                    bottom: 20
+                                }
+                            },
+                            tooltip: enhancedTooltip,
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            chartShadow: {}
+                        }
+                    },
+                    plugins: [addShadowPlugin]
+                });
+            } else if (type === 'stacked_bar') {
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.categories,
+                        datasets: data.series.map((series, index) => {
+                            return {
+                                label: series.name,
+                                data: series.data,
+                                backgroundColor: harmonizedColors[index % harmonizedColors.length],
+                                borderColor: '#ffffff',
+                                borderWidth: 2,
+                                borderRadius: 4,
+                                hoverBackgroundColor: harmonizedColors[index % harmonizedColors.length],
+                                hoverBorderColor: '#ffffff',
+                                hoverBorderWidth: 2
+                            };
+                        })
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: enhancedAnimation,
+                        barPercentage: 0.85,
+                        categoryPercentage: 0.8,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title,
+                                font: {
+                                    size: 16,
+                                    weight: '500'
+                                },
+                                padding: {
+                                    top: 10,
+                                    bottom: 20
+                                }
+                            },
+                            tooltip: enhancedTooltip,
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    pointStyle: 'rectRounded'
+                                }
+                            },
+                            chartShadow: {}
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: data.x_label,
+                                    font: {
+                                        weight: '500'
+                                    },
+                                    padding: {
+                                        top: 10
+                                    }
+                                },
+                                stacked: true,
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: data.y_label,
+                                    font: {
+                                        weight: '500'
+                                    },
+                                    padding: {
+                                        bottom: 10
+                                    }
+                                },
+                                stacked: true,
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    lineWidth: 1
+                                }
+                            }
+                        }
+                    },
+                    plugins: [addShadowPlugin]
+                });
+            }
+            
+            // Apply animation to chart container
+            const chartContainer = document.getElementById('demoChart').parentElement;
+            chartContainer.classList.add('chart-animate');
+            
+            return chart;
+        }
     </script>
 </body>
 </html>

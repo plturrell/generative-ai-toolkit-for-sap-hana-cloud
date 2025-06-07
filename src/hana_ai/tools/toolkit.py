@@ -23,6 +23,9 @@ from hana_ai.tools.hana_ml_tools.ts_check_tools import TimeSeriesCheck
 from hana_ai.tools.hana_ml_tools.ts_outlier_detection_tools import TSOutlierDetection
 from hana_ai.tools.hana_ml_tools.ts_accuracy_measure_tools import AccuracyMeasure
 from hana_ai.tools.hana_ml_tools.unsupported_tools import ClassificationTool, RegressionTool
+from hana_ai.tools.hana_ml_tools.neural_additive_models_tools import NeuralAdditiveModelsFitAndSave, NeuralAdditiveModelsLoadModelAndPredict, NeuralAdditiveModelsFeatureImportance
+from hana_ai.tools.hana_ml_tools.nam_visualizer_tools import NAMFeatureContributionsPlot
+from hana_ai.tools.hana_ml_tools.nam_design_system import create_nam_integration
 
 class HANAMLToolkit(BaseToolkit):
     """
@@ -64,6 +67,10 @@ class HANAMLToolkit(BaseToolkit):
             ForecastLinePlot(connection_context=self.connection_context),
             IntermittentForecast(connection_context=self.connection_context),
             ListModels(connection_context=self.connection_context),
+            NeuralAdditiveModelsFitAndSave(connection_context=self.connection_context),
+            NeuralAdditiveModelsLoadModelAndPredict(connection_context=self.connection_context),
+            NeuralAdditiveModelsFeatureImportance(connection_context=self.connection_context),
+            NAMFeatureContributionsPlot(connection_context=self.connection_context),
             TimeSeriesDatasetReport(connection_context=self.connection_context),
             TimeSeriesCheck(connection_context=self.connection_context),
             TSOutlierDetection(connection_context=self.connection_context),
@@ -154,3 +161,34 @@ class HANAMLToolkit(BaseToolkit):
             get_code.set_vectordb(self.vectordb)
             return self.used_tools + [get_code]
         return self.used_tools
+    
+    def register_nam_design_system(self, app):
+        """
+        Register the Neural Additive Models Design System with a FastAPI app.
+        
+        This method creates and registers the NAM design system integration with
+        the provided FastAPI application, mounting all required routes and static files.
+        
+        Parameters
+        ----------
+        app : FastAPI
+            The FastAPI application to register the design system with.
+            
+        Returns
+        -------
+        NAMDesignSystemIntegration
+            The NAM design system integration instance.
+        
+        Examples
+        --------
+        >>> from fastapi import FastAPI
+        >>> from hana_ai.tools.toolkit import HANAMLToolkit
+        >>> 
+        >>> app = FastAPI()
+        >>> toolkit = HANAMLToolkit(connection_context=cc)
+        >>> nam_integration = toolkit.register_nam_design_system(app)
+        """
+        nam_integration = create_nam_integration(connection_context=self.connection_context)
+        app.include_router(nam_integration.router)
+        nam_integration.mount_static_files(app)
+        return nam_integration

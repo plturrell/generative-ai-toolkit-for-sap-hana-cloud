@@ -147,6 +147,77 @@ def get_together_ai_client():
     
     return get_client()
 
+def get_llm_client():
+    """
+    Get an LLM client for generating text.
+    
+    This function provides a simplified abstraction over different LLM backends.
+    For demo purposes, it will work without requiring any API keys.
+    
+    Returns:
+        LLMClient: A client for interacting with language models
+    """
+    # Determine which LLM backend to use
+    # First try to use environment variables
+    api_key = os.environ.get("OPENAI_API_KEY", None)
+    
+    # If no API key, create a mock client for demo purposes
+    if not api_key:
+        logger.info("No API key found, creating mock LLM client for demos")
+        # Simple mock client that doesn't require external APIs
+        class MockLLMClient:
+            def generate(self, prompt):
+                return f"Generated response for: {prompt}"
+                
+            def embed(self, text):
+                # Return mock embeddings
+                import numpy as np
+                return np.random.rand(1536)
+        
+        return MockLLMClient()
+    
+    # Otherwise, try to initialize a real client
+    try:
+        # Try OpenAI client first
+        from openai import OpenAI
+        
+        client = OpenAI(api_key=api_key)
+        
+        # Wrap in a standardized interface
+        class OpenAIClient:
+            def __init__(self, client):
+                self.client = client
+                
+            def generate(self, prompt):
+                response = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                return response.choices[0].message.content
+                
+            def embed(self, text):
+                response = self.client.embeddings.create(
+                    input=text,
+                    model="text-embedding-ada-002"
+                )
+                return response.data[0].embedding
+        
+        return OpenAIClient(client)
+        
+    except (ImportError, Exception) as e:
+        # Fall back to mock client if something goes wrong
+        logger.warning(f"Failed to initialize LLM client: {str(e)}. Using mock client.")
+        class MockLLMClient:
+            def generate(self, prompt):
+                return f"Generated response for: {prompt}"
+                
+            def embed(self, text):
+                # Return mock embeddings
+                import numpy as np
+                return np.random.rand(1536)
+                
+        return MockLLMClient()
+
 # Function to reset connections (useful for testing)
 def reset_connections():
     """Reset all cached connections."""

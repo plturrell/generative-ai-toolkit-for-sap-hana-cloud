@@ -14,7 +14,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from .config import settings
-from .routers import agents, dataframes, tools, vectorstore, config, developer, backend, health
+from .routers import agents, dataframes, tools, vectorstore, config, developer, backend, health, optimization, demo
 from .middleware import (
     RequestLoggerMiddleware, 
     SecurityHeadersMiddleware,
@@ -136,6 +136,8 @@ app.include_router(config.router, prefix="/api/v1/config", tags=["Configuration"
 app.include_router(backend.router, prefix="/api/v1/backend", tags=["Backend"])
 app.include_router(developer.router, prefix="/api/v1/developer", tags=["Developer"])
 app.include_router(health.router, prefix="/api/v1/health", tags=["Health"])
+app.include_router(optimization.router, prefix="/api/v1/optimization", tags=["Optimization"])
+app.include_router(demo.router, prefix="/api/v1/demo", tags=["Demo"])
 
 # Only include UI endpoints if we're not in API-only mode
 if settings.DEPLOYMENT_MODE != DEPLOYMENT_MODE_API_ONLY:
@@ -154,13 +156,30 @@ if settings.DEPLOYMENT_MODE != DEPLOYMENT_MODE_API_ONLY:
         developer_html_path = os.path.join(static_dir, "developer", "index.html")
         with open(developer_html_path, "r") as f:
             return f.read()
+            
+    # Welcome page - first run experience
+    @app.get("/welcome", response_class=HTMLResponse, tags=["Welcome"])
+    async def welcome_page():
+        """Serve the welcome page for first-run experience."""
+        welcome_html_path = os.path.join(static_dir, "welcome.html")
+        with open(welcome_html_path, "r") as f:
+            return f.read()
 
-    # Root endpoint - redirect to developer studio
+    # Root endpoint - redirect to welcome page for first-time users, otherwise developer studio
     @app.get("/", tags=["Root"])
-    async def root():
-        """Redirect to developer studio."""
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/developer")
+    async def root(request: Request):
+        """Serve welcome page for first visit, otherwise redirect to developer studio."""
+        # Check if this is the first visit using a session cookie
+        session = request.session
+        if session.get("visited"):
+            # Return developer studio for returning users
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url="/developer")
+        else:
+            # Mark as visited and show welcome page for first-time users
+            session["visited"] = True
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse(url="/welcome")
 else:
     # API-only mode root endpoint
     @app.get("/", tags=["Root"])
@@ -286,6 +305,17 @@ async def startup():
     
     # Initialize agent sessions
     app.state.agent_sessions = {}
+    
+    # Initialize model registry
+    app.state.model_registry = {}
+    
+    # Initialize sparsity optimizer
+    try:
+        from hana_ai.tools.optimization.sparsity_optimizer import get_sparsity_optimizer
+        app.state.sparsity_optimizer = get_sparsity_optimizer()
+        logger.info("Initialized sparsity optimizer for model optimization")
+    except Exception as e:
+        logger.warning(f"Failed to initialize sparsity optimizer: {str(e)}")
 
 @app.on_event("shutdown")
 async def shutdown():
