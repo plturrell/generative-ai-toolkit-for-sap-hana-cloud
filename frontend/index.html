@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Additive Models - SAP HANA Generative AI Toolkit</title>
+    <link rel="stylesheet" href="/nam_design_system/design_tokens.css">
+    <script src="/nam_design_system/index.js" defer></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--nam-background-color);
+            color: var(--nam-text-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--nam-primary-color);
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 2rem;
+            color: var(--nam-secondary-color);
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature-card {
+            background-color: var(--nam-card-background);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: var(--nam-heading-color);
+        }
+        
+        .feature-card p {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--nam-text-color);
+        }
+        
+        .demo-container {
+            background-color: var(--nam-card-background);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 3rem;
+        }
+        
+        .nam-complexity-selector {
+            margin-bottom: 2rem;
+        }
+        
+        .nam-feature-contributions {
+            height: 400px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--nam-text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Neural Additive Models</h1>
+            <h2>Interpretable Machine Learning with SAP HANA Cloud</h2>
+        </header>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>Interpretable Deep Learning</h3>
+                <p>Neural Additive Models combine the expressiveness of deep neural networks with the interpretability of generalized additive models, offering the best of both worlds.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Feature-wise Neural Networks</h3>
+                <p>NAMs use separate neural networks for each feature, allowing us to visualize and understand the contribution of each feature to the prediction.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Interactive Visualizations</h3>
+                <p>Explore the relationship between features and predictions with our interactive visualization tools, designed with Jony Ive's principles of clarity and purpose.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>SAP HANA Integration</h3>
+                <p>Seamlessly integrate with SAP HANA Cloud to train and deploy Neural Additive Models on your enterprise data with high performance.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Customizable Architecture</h3>
+                <p>Configure the depth and width of each feature's neural network to balance complexity, performance, and interpretability for your specific use case.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Feature Importance Analysis</h3>
+                <p>Understand which features are most important for your model's predictions with built-in feature importance metrics and visualizations.</p>
+            </div>
+        </div>
+        
+        <div class="demo-container">
+            <h2>Interactive Demo</h2>
+            <p>Select a dataset and model complexity to see Neural Additive Models in action:</p>
+            
+            <div class="nam-complexity-selector"></div>
+            <div class="nam-feature-contributions"></div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2025 SAP SE or an SAP affiliate company. All rights reserved.</p>
+        <p>SAP HANA Generative AI Toolkit | Neural Additive Models Module</p>
+    </footer>
+    
+    <script>
+        // Initialize NAM Design System components when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.NAMDesignSystem) {
+                // Initialize complexity selector
+                const complexitySelector = new NAMDesignSystem.ComplexitySelector({
+                    container: '.nam-complexity-selector',
+                    onChange: (complexity) => {
+                        console.log('Complexity changed:', complexity);
+                        // Update feature contributions based on complexity
+                        if (featureContributions) {
+                            featureContributions.updateComplexity(complexity);
+                        }
+                    }
+                });
+                
+                // Initialize feature contributions visualization
+                const featureContributions = new NAMDesignSystem.FeatureContributions({
+                    container: '.nam-feature-contributions',
+                    dataUrl: '/api/nam/feature-contributions',
+                    theme: 'light',
+                    animate: true
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  # API service with T4 GPU acceleration
+  # API service with Neural Additive Models (NAM) support
   api:
     build:
       context: .
-      dockerfile: Dockerfile.nvidia
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
       - "9090:9090"
@@ -15,18 +15,12 @@ services:
       - API_PORT=8000
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
-      # T4 GPU optimization settings
-      - ENABLE_GPU_ACCELERATION=true
-      - ENABLE_TENSORRT=true
-      - GPU_MEMORY_FRACTION=0.8
-      - PRECISION=fp16
-      - BATCH_SIZE=32
+      # NAM optimization settings
+      - ENABLE_GPU_ACCELERATION=false
+      - ENABLE_NAM_VISUALIZATION=true
+      - ENABLE_NAM_FEATURE_IMPORTANCE=true
+      - BATCH_SIZE=16
       - MAX_SEQUENCE_LENGTH=512
-      # Auto-tuning settings
-      - ENABLE_AUTOTUNING=true
-      - AUTOTUNER_CONFIG_PATH=/app/config/t4_autotuner.json
-      - AUTOTUNER_EXPLORATION_RATE=0.1
-      - AUTOTUNER_UPDATE_INTERVAL=300
       # Authentication settings
       - AUTH_REQUIRED=false
       - API_KEYS=
@@ -43,15 +37,18 @@ services:
       - LOG_REQUESTS=true
       - LOG_RESPONSES=false
       - LOG_PERFORMANCE=true
-      - LOG_GPU_METRICS=true
       - DETAILED_ERROR_RESPONSES=true
+      # NAM Design System
+      - ENABLE_NAM_DESIGN_SYSTEM=true
+      - NAM_DESIGN_THEME=light
+      - NAM_DESIGN_ANIMATION_ENABLED=true
     volumes:
       - ./api:/app/api
       - ./src:/app/src
       - ./tests:/app/tests
       - ./test_results:/app/test_results
-      - tensorrt_cache:/app/tensorrt_cache
-      - autotuner_data:/app/config
+      - model_cache:/app/model_cache
+      - nam_visualizations:/app/nam_visualizations
       - api_logs:/app/logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health || exit 1"]
@@ -59,25 +56,27 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
   
-  # Frontend service with Nginx
+  # Frontend service with Nginx and NAM Design System
   frontend:
-    image: nginx:alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       - api
+      - nam-visualizer
     volumes:
       - ./frontend:/usr/share/nginx/html
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./src/hana_ai/tools/hana_ml_tools/nam_design_system:/usr/share/nginx/html/nam_design_system
+    environment:
+      - API_URL=http://api:8000
+      - NAM_VISUALIZER_URL=http://nam-visualizer:8050
+      - NAM_DESIGN_THEME=light
+      - ENABLE_ANIMATIONS=true
     restart: unless-stopped
   
   # Prometheus for metrics collection
@@ -105,24 +104,24 @@ services:
       retries: 3
       start_period: 30s
   
-  # DCGM Exporter for T4-specific GPU metrics
-  dcgm-exporter:
-    image: nvidia/dcgm-exporter:latest
+  # NAM visualization service
+  nam-visualizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "src.hana_ai.tools.hana_ml_tools.nam_visualizer_tools"]
     ports:
-      - "9400:9400"
+      - "8050:8050"
     environment:
-      - DCGM_EXPORTER_COLLECTORS=dcp,health,nvlink
-      - DCGM_EXPORTER_INTERVAL=1000
+      - ENABLE_NAM_VISUALIZATION=true
+      - NAM_DESIGN_THEME=light
+      - NAM_DESIGN_ANIMATION_ENABLED=true
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./src:/app/src
+      - nam_visualizations:/app/nam_visualizations
+    depends_on:
+      - api
     restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
   
   # Grafana for metrics visualization
   grafana:
@@ -172,51 +171,27 @@ services:
       retries: 3
       start_period: 30s
 
-  # Dynamic threshold adapter service
-  threshold-adapter:
+  # NAM Model Service
+  nam-model-service:
     build:
       context: .
-      dockerfile: Dockerfile.nvidia
-    command: ["python", "-m", "api.prometheus_dynamic_thresholds"]
+      dockerfile: Dockerfile
+    command: ["python", "-m", "src.hana_ai.tools.hana_ml_tools.neural_additive_models_tools"]
     volumes:
-      - ./api:/app/api
-      - ./prometheus:/app/prometheus
-      - threshold_data:/app/data
+      - ./src:/app/src
+      - model_cache:/app/model_cache
     environment:
-      - PROMETHEUS_URL=http://prometheus:9090
-      - RULES_FILE=/app/prometheus/t4_gpu_alert_rules.yml
-      - CONFIG_FILE=/app/data/dynamic_thresholds.json
+      - MODEL_CACHE_DIR=/app/model_cache
       - LOG_LEVEL=INFO
-      - UPDATE_INTERVAL=3600
-    depends_on:
-      - prometheus
-    restart: unless-stopped
-
-  # Benchmark metrics collector
-  benchmark-collector:
-    build:
-      context: .
-      dockerfile: Dockerfile.nvidia
-    command: ["python", "-m", "api.dynamic_benchmarks"]
-    volumes:
-      - ./api:/app/api
-      - ./ngc-blueprint.json:/app/ngc-blueprint.json
-      - benchmark_data:/app/data
-    environment:
-      - BLUEPRINT_FILE=/app/ngc-blueprint.json
-      - METRICS_FILE=/app/data/ngc_benchmark_metrics.json
-      - LOG_LEVEL=INFO
-      - UPDATE_INTERVAL=3600
+      - ENABLE_NAM_FEATURE_IMPORTANCE=true
     depends_on:
       - api
     restart: unless-stopped
 
 volumes:
   api_logs:
-  tensorrt_cache:
+  model_cache:
+  nam_visualizations:
   prometheus_data:
   grafana_data:
   alertmanager_data:
-  autotuner_data:
-  threshold_data:
-  benchmark_data:
