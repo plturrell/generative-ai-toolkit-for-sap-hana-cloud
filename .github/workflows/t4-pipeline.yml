@@ -1,0 +1,156 @@
+name: T4 GPU CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - 'deployment/nvidia-t4/**'
+      - '.github/workflows/t4-pipeline.yml'
+      - 'Dockerfile.nvidia'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - 'deployment/nvidia-t4/**'
+      - '.github/workflows/t4-pipeline.yml'
+      - 'Dockerfile.nvidia'
+  workflow_dispatch:
+    inputs:
+      deployment_target:
+        description: 'Deployment target (dev/staging/prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest pytest-cov
+          pip install -r requirements.txt
+          pip install -r api/requirements.txt
+      - name: Lint with flake8
+        run: |
+          flake8 src/ api/ --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Test with pytest
+        run: |
+          pytest tests/ --cov=src
+
+  build-t4-container:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push T4 optimized image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile.nvidia
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/hana-ai-toolkit:t4-${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/hana-ai-toolkit:t4-buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/hana-ai-toolkit:t4-buildcache,mode=max
+
+  performance-regression-test:
+    needs: build-t4-container
+    runs-on: [self-hosted, T4-GPU]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Pull latest T4 image
+        run: |
+          docker pull ${{ secrets.DOCKER_REGISTRY }}/hana-ai-toolkit:t4-${{ github.sha }}
+      - name: Run performance regression tests
+        run: |
+          cd deployment/nvidia-t4
+          python3 ci_t4_test.py --image ${{ secrets.DOCKER_REGISTRY }}/hana-ai-toolkit:t4-${{ github.sha }} --output-dir ./t4-test-results
+      - name: Check performance against baseline
+        run: |
+          cd deployment/nvidia-t4
+          python3 run_automated_tests.py --verify-performance --baseline ./t4-test-results/baseline.json --current ./t4-test-results/ci-test-$(date +%Y%m%d-%H%M%S).json
+      - name: Archive test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: t4-performance-test-results
+          path: deployment/nvidia-t4/t4-test-results/
+
+  canary-deployment:
+    needs: performance-regression-test
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.deployment_target || 'dev' }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Deploy Canary
+        run: |
+          cd deployment/canary
+          ./canary-deployment.sh \
+            --image ${{ secrets.DOCKER_REGISTRY }}/hana-ai-toolkit:t4-${{ github.sha }} \
+            --environment ${{ github.event.inputs.deployment_target || 'dev' }} \
+            --traffic-percentage 20
+      - name: Monitor Canary
+        run: |
+          cd deployment/canary
+          python monitor-canary.py \
+            --duration 15 \
+            --environment ${{ github.event.inputs.deployment_target || 'dev' }} \
+            --threshold 99.5
+
+  promote-canary:
+    needs: canary-deployment
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.deployment_target || 'dev' }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Promote Canary
+        run: |
+          cd deployment/canary
+          ./canary-promotion.sh \
+            --image ${{ secrets.DOCKER_REGISTRY }}/hana-ai-toolkit:t4-${{ github.sha }} \
+            --environment ${{ github.event.inputs.deployment_target || 'dev' }}
+      - name: Tag successful deployment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/t4-${{ github.event.inputs.deployment_target || 'dev' }}-${{ github.sha }}',
+              sha: context.sha
+            })

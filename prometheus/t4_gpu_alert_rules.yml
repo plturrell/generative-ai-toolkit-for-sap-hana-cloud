@@ -1,0 +1,109 @@
+groups:
+- name: t4_gpu_alerts
+  rules:
+  - alert: T4GPUHighTemperature
+    expr: DCGM_FI_DEV_GPU_TEMP{gpu_id=~".+"} > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "T4 GPU temperature high ({{ $labels.gpu_id }})"
+      description: "T4 GPU temperature is above 80°C for 5 minutes\n  Current value: {{ $value }}°C"
+
+  - alert: T4GPUCriticalTemperature
+    expr: DCGM_FI_DEV_GPU_TEMP{gpu_id=~".+"} > 85
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "T4 GPU temperature critical ({{ $labels.gpu_id }})"
+      description: "T4 GPU temperature is above 85°C for 2 minutes. This could lead to thermal throttling.\n  Current value: {{ $value }}°C"
+
+  - alert: T4GPUMemoryNearFull
+    expr: DCGM_FI_DEV_FB_FREE / DCGM_FI_DEV_FB_TOTAL * 100 < 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "T4 GPU memory nearly full ({{ $labels.gpu_id }})"
+      description: "T4 GPU memory usage is above 90% for 5 minutes\n  Current free memory: {{ $value }}%"
+
+  - alert: T4GPUHighUtilization
+    expr: DCGM_FI_DEV_GPU_UTIL{gpu_id=~".+"} > 95
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "T4 GPU utilization consistently high ({{ $labels.gpu_id }})"
+      description: "T4 GPU utilization has been above 95% for 30 minutes. Consider scaling out if this is sustained.\n  Current utilization: {{ $value }}%"
+
+  - alert: T4GPULowUtilization
+    expr: DCGM_FI_DEV_GPU_UTIL{gpu_id=~".+"} < 10 and on(instance) up{job="nvidia-gpu"} == 1
+    for: 1h
+    labels:
+      severity: info
+    annotations:
+      summary: "T4 GPU utilization low ({{ $labels.gpu_id }})"
+      description: "T4 GPU utilization has been below 10% for 1 hour. Consider resource optimization.\n  Current utilization: {{ $value }}%"
+
+  - alert: T4GPUTensorCoreUtilizationLow
+    expr: t4_gpu_tensor_core_utilization < 20 and on(instance) DCGM_FI_DEV_GPU_UTIL{gpu_id=~".+"} > 50
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "T4 GPU Tensor Core utilization low ({{ $labels.gpu_id }})"
+      description: "T4 GPU overall utilization is high but Tensor Core usage is low. Ensure workloads are using FP16/INT8 precision for optimal performance.\n  Current Tensor Core utilization: {{ $value }}%"
+
+  - alert: T4GPUMemoryECCErrors
+    expr: DCGM_FI_DEV_ECC_SBE_VOL_TOTAL{gpu_id=~".+"} > 0 or DCGM_FI_DEV_ECC_DBE_VOL_TOTAL{gpu_id=~".+"} > 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "T4 GPU ECC memory errors detected ({{ $labels.gpu_id }})"
+      description: "ECC memory errors detected on T4 GPU. This could indicate hardware issues.\n  Single-bit errors: {{ $value }}"
+
+  - alert: T4GPUPowerConsumptionHigh
+    expr: DCGM_FI_DEV_POWER_USAGE{gpu_id=~".+"} / DCGM_FI_DEV_POWER_LIMIT{gpu_id=~".+"} * 100 > 95
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "T4 GPU power consumption near limit ({{ $labels.gpu_id }})"
+      description: "T4 GPU power consumption is above 95% of the limit for 15 minutes. This may lead to performance throttling.\n  Current power usage: {{ $value }}% of limit"
+
+  - alert: T4GPUThroughputDrop
+    expr: rate(t4_gpu_inference_requests_total[5m]) < 0.7 * rate(t4_gpu_inference_requests_total[1h] offset 1h)
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "T4 GPU inference throughput dropped"
+      description: "T4 GPU inference throughput has dropped by more than 30% compared to 1 hour ago"
+
+  - alert: T4GPULatencyIncrease
+    expr: t4_gpu_inference_latency_milliseconds{quantile="0.95"} > 1.5 * avg_over_time(t4_gpu_inference_latency_milliseconds{quantile="0.95"}[6h] offset 6h)
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "T4 GPU inference latency increased"
+      description: "T4 GPU inference latency (95th percentile) has increased by more than 50% compared to the average of the last 6 hours"
+
+  - alert: T4GPUTensorRTEngineFailure
+    expr: increase(t4_gpu_tensorrt_engine_failure_total[15m]) > 0
+    labels:
+      severity: critical
+    annotations:
+      summary: "T4 GPU TensorRT engine failures detected"
+      description: "TensorRT engine failures detected in the last 15 minutes. Check logs for details."
+
+  - alert: T4GPUDriverError
+    expr: t4_gpu_driver_error_total > 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "T4 GPU driver errors detected"
+      description: "T4 GPU driver errors have been detected. This may indicate driver compatibility issues or hardware problems."

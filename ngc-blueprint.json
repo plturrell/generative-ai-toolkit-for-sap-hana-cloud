@@ -6,19 +6,29 @@
   "framework": "PyTorch",
   "platform": "Linux",
   "os": "Ubuntu 22.04",
-  "gpuType": "A100, H100",
+  "gpuType": "T4, A100, H100",
   "cudaVersion": "12.2",
   "licenses": ["Apache-2.0"],
-  "tags": ["SAP", "HANA", "GenerativeAI", "LLM", "GPU-Optimized", "TensorRT", "Hopper-Optimized", "GPTQ", "AWQ"],
+  "tags": ["SAP", "HANA", "GenerativeAI", "LLM", "GPU-Optimized", "TensorRT", "T4-Optimized", "Hopper-Optimized", "GPTQ", "AWQ"],
   "resources": {
     "gpu": 1,
     "minGpuMemory": 16,
     "cpu": 8,
     "memory": 32
   },
+  "scaling": {
+    "minReplicas": 1,
+    "maxReplicas": 8,
+    "targetCPUUtilization": 70,
+    "targetGPUUtilization": 80
+  },
   "hopper": {
     "optimized": true,
     "features": ["FP8", "Transformer Engine", "Flash Attention 2", "FSDP", "TensorRT", "GPTQ", "AWQ"]
+  },
+  "t4": {
+    "optimized": true,
+    "features": ["FP16", "INT8", "TensorRT", "Dynamic Shapes", "GPTQ", "AWQ"]
   },
   "containerInfo": {
     "registry": "nvcr.io",
@@ -71,7 +81,30 @@
       "path": "/metrics"
     },
     "dashboards": {
-      "grafana": "/grafana/provisioning/dashboards/api.json"
+      "grafana": "/grafana/provisioning/dashboards/api.json",
+      "t4_dashboard": "/deployment/nvidia-t4/grafana/t4-gpu-dashboard.json"
+    }
+  },
+  "validation": {
+    "testSuite": "/deployment/nvidia-t4/run_automated_tests.py",
+    "benchmarks": "/deployment/nvidia-t4/load_test.py",
+    "ciPipeline": "/deployment/nvidia-t4/ci_t4_test.py",
+    "reportPath": "/deployment/nvidia-t4/t4-test-results"
+  },
+  "benchmarks": {
+    "t4": {
+      "inferenceLatency": {
+        "batch1": "25ms",
+        "batch8": "65ms",
+        "batch32": "180ms"
+      },
+      "throughput": {
+        "batch1": "40 tokens/sec",
+        "batch8": "123 tokens/sec",
+        "batch32": "178 tokens/sec"
+      },
+      "memoryUsage": "12.4 GB",
+      "tensorrtSpeedup": "3.7x"
     }
   },
   "ngcRecommends": {
