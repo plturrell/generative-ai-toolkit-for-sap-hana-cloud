@@ -1,0 +1,31 @@
+name: hana-ai-toolkit-test
+
+services:
+  # Simple API service for testing endpoints
+  api:
+    image: python:3.9-slim
+    command: bash -c "apt-get update && apt-get install -y curl && pip install -r /app/requirements.txt && python -m uvicorn app:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8002:8000"
+    restart: unless-stopped
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - ENABLE_GPU_ACCELERATION=false
+      - ENABLE_TENSORRT=false
+      - ENABLE_ADAPTIVE_BATCH=true
+      - T4_OPTIMIZED=true
+      - ENABLE_NEW_UI=true
+      - UI_ANIMATION_ENABLED=true
+      - UI_GESTURE_SUPPORT=true
+      - ENABLE_ALGORITHM_TRANSITIONS=true
+      - DEVELOPMENT_MODE=true
+    volumes:
+      - ./api_test:/app
+    working_dir: /app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
