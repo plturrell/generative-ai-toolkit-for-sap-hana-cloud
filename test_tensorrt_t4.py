@@ -101,6 +101,7 @@ class T4TensorRTTest:
             self.test_tensorrt_availability,
             self.test_embedding_generation,
             self.test_embedding_batch_performance,
+            self.test_adaptive_batch_sizing,
             self.test_vector_search
         ]
         
@@ -366,6 +367,94 @@ class T4TensorRTTest:
         
         return result
     
+    def test_adaptive_batch_sizing(self) -> Dict[str, Any]:
+        """
+        Test adaptive batch sizing functionality.
+        
+        Returns:
+            Test result
+        """
+        result = {
+            "name": "Adaptive Batch Sizing",
+            "status": "failed",
+            "details": {}
+        }
+        
+        try:
+            # Check if adaptive batch sizing is enabled
+            url = f"{self.api_base_url}/api/config/batch_sizing"
+            response = requests.get(url, headers=self.headers, timeout=self.test_timeout)
+            response.raise_for_status()
+            
+            batch_config = response.json()
+            result["details"]["config"] = batch_config
+            
+            # Verify T4 optimization is enabled
+            if batch_config.get("t4_optimized", False):
+                # Test with multiple batch sizes
+                url = f"{self.api_base_url}/api/embeddings/adaptive_test"
+                
+                # Create test data with various lengths
+                test_data = [
+                    {"texts": ["Short text"] * 10, "expected_batch": "small"},
+                    {"texts": ["Medium length text with some more words to process"] * 20, "expected_batch": "medium"},
+                    {"texts": ["Very long text " + "with lots of words " * 20] * 10, "expected_batch": "small"}
+                ]
+                
+                results = []
+                for data in test_data:
+                    # Get embeddings with adaptive batch sizing
+                    payload = {
+                        "texts": data["texts"],
+                        "model_name": self.embedding_model,
+                        "use_tensorrt": self.enable_tensorrt,
+                        "precision": self.precision,
+                        "enable_adaptive_batch": True
+                    }
+                    
+                    response = requests.post(url, json=payload, headers=self.headers, timeout=self.test_timeout)
+                    response.raise_for_status()
+                    
+                    adaptive_result = response.json()
+                    
+                    # Get metrics from the response
+                    test_result = {
+                        "input_length": len(data["texts"]),
+                        "text_length": len(data["texts"][0]),
+                        "expected_behavior": data["expected_batch"],
+                        "batch_size": adaptive_result.get("metadata", {}).get("batch_size"),
+                        "processing_time_ms": adaptive_result.get("processing_time_ms"),
+                        "adaptive_enabled": adaptive_result.get("metadata", {}).get("adaptive_batch_sizing", False)
+                    }
+                    
+                    results.append(test_result)
+                
+                # Record test results
+                result["details"]["test_results"] = results
+                
+                # Get performance statistics
+                url = f"{self.api_base_url}/api/metrics/batch_performance"
+                response = requests.get(url, headers=self.headers, timeout=self.test_timeout)
+                response.raise_for_status()
+                
+                performance_stats = response.json()
+                result["details"]["performance_stats"] = performance_stats
+                
+                # Check that we have some optimal batch sizes recorded
+                if performance_stats.get("optimal_batch_sizes"):
+                    result["status"] = "passed"
+                    result["message"] = "Adaptive batch sizing test successful"
+                else:
+                    result["message"] = "No optimal batch sizes recorded"
+            else:
+                result["message"] = "T4 optimization is not enabled for batch sizing"
+        except Exception as e:
+            result["status"] = "error"
+            result["error"] = str(e)
+            result["message"] = f"Error testing adaptive batch sizing: {str(e)}"
+        
+        return result
+        
     def test_vector_search(self) -> Dict[str, Any]:
         """
         Test vector search functionality.

@@ -1,31 +1,73 @@
 version: '3.8'
 
 services:
+  # API service with T4 GPU acceleration
   api:
     build:
       context: .
       dockerfile: Dockerfile.nvidia
     ports:
       - "8000:8000"
+      - "9090:9090"
+    restart: unless-stopped
     environment:
       - API_HOST=0.0.0.0
       - API_PORT=8000
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
-      - AUTH_REQUIRED=true
-      - PROMETHEUS_ENABLED=true
+      # T4 GPU optimization settings
       - ENABLE_GPU_ACCELERATION=true
       - ENABLE_TENSORRT=true
+      - T4_GPU_FP16_MODE=true
+      - T4_GPU_INT8_MODE=true
+      - T4_GPU_MAX_WORKSPACE_SIZE=4294967296
+      - T4_GPU_MEMORY_FRACTION=0.8
+      - T4_GPU_OPTIMIZATION_LEVEL=4
+      - PRECISION=fp16
+      - CUDA_VISIBLE_DEVICES=0
+      # Advanced quantization
       - ENABLE_GPTQ=true
       - ENABLE_AWQ=true
       - QUANTIZATION_BIT_WIDTH=4
-      - ENABLE_FP8=true
+      - ENABLE_FP8=false  # T4 doesn't support FP8
       - ENABLE_FLASH_ATTENTION_2=true
+      # Adaptive batch sizing for T4 GPUs
+      - ENABLE_ADAPTIVE_BATCH=true
+      - T4_OPTIMIZED=true
+      - ADAPTIVE_BATCH_MIN=1
+      - ADAPTIVE_BATCH_MAX=128
+      - ADAPTIVE_BATCH_DEFAULT=32
+      - ADAPTIVE_BATCH_BENCHMARK_INTERVAL=3600
+      - ADAPTIVE_BATCH_CACHE_TTL=300
+      - GPU_TYPE=t4
+      # Cache settings
       - QUANTIZATION_CACHE_DIR=/tmp/quantization_cache
-      - CUDA_VISIBLE_DEVICES=0
+      - TENSORRT_CACHE_PATH=/app/tensorrt_cache
+      # Authentication settings
+      - AUTH_REQUIRED=false
+      - API_KEYS=
+      # Performance settings
+      - RATE_LIMIT_PER_MINUTE=100
+      - CONNECTION_POOL_SIZE=20
+      - DEFAULT_TIMEOUT=60
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PORT=9090
+      # CORS settings
+      - CORS_ORIGINS=*
     volumes:
-      - ./data:/app/data
+      - ./api:/app/api
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./test_results:/app/test_results
+      - model_cache:/app/model_cache
+      - tensorrt_cache:/app/tensorrt_cache
       - /tmp/quantization_cache:/tmp/quantization_cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     deploy:
       resources:
         reservations:
@@ -34,20 +76,115 @@ services:
               count: 1
               capabilities: [gpu]
 
+  # Frontend service with Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    environment:
+      - API_URL=http://api:8000
+    restart: unless-stopped
+
+  # NVIDIA DCGM Exporter for GPU metrics
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.7-3.1.4-ubuntu20.04
+    ports:
+      - "9400:9400"
+    restart: unless-stopped
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Prometheus for metrics collection
   prometheus:
     image: prom/prometheus:latest
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/t4_gpu_alert_rules.yml:/etc/prometheus/t4_gpu_alert_rules.yml
+      - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - "9091:9090"  # Map to different port to avoid conflict with API metrics
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      - --web.enable-lifecycle  # Enable runtime reloading of configuration
     depends_on:
       - api
+      - dcgm-exporter
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
+  # Grafana for metrics visualization
   grafana:
     image: grafana/grafana:latest
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./deployment/nvidia-t4/grafana/t4-gpu-dashboard.json:/etc/grafana/provisioning/dashboards/t4-gpu-dashboard.json
+      - grafana_data:/var/lib/grafana
     ports:
       - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,natel-discrete-panel
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=5s
     depends_on:
       - prometheus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Alertmanager for alert management and notification
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  model_cache:
+  tensorrt_cache:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:

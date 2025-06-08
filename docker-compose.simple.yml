@@ -1,27 +1,68 @@
-name: hana-ai-toolkit-test
+name: hana-ai-toolkit-t4
 
 services:
-  # Simple API service for testing endpoints
+  # T4 GPU optimized API service for testing
   api:
-    image: python:3.9-slim
-    command: bash -c "apt-get update && apt-get install -y curl && pip install -r /app/requirements.txt && python -m uvicorn app:app --host 0.0.0.0 --port 8000"
+    build:
+      context: .
+      dockerfile: Dockerfile.nvidia
     ports:
       - "8002:8000"
+      - "9090:9090"
     restart: unless-stopped
     environment:
+      # Basic API configuration
       - API_HOST=0.0.0.0
       - API_PORT=8000
-      - ENABLE_GPU_ACCELERATION=false
-      - ENABLE_TENSORRT=false
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=json
+      
+      # T4 GPU optimization settings
+      - ENABLE_GPU_ACCELERATION=true
+      - ENABLE_TENSORRT=true
+      - T4_GPU_FP16_MODE=true
+      - T4_GPU_INT8_MODE=true
+      - T4_GPU_MAX_WORKSPACE_SIZE=4294967296
+      - T4_GPU_MEMORY_FRACTION=0.8
+      - T4_GPU_OPTIMIZATION_LEVEL=4
+      - PRECISION=fp16
+      - CUDA_VISIBLE_DEVICES=0
+      - GPU_TYPE=t4
+      
+      # Adaptive batch sizing for T4 GPUs
       - ENABLE_ADAPTIVE_BATCH=true
       - T4_OPTIMIZED=true
-      - ENABLE_NEW_UI=true
-      - UI_ANIMATION_ENABLED=true
-      - UI_GESTURE_SUPPORT=true
-      - ENABLE_ALGORITHM_TRANSITIONS=true
+      - ADAPTIVE_BATCH_MIN=1
+      - ADAPTIVE_BATCH_MAX=128
+      - ADAPTIVE_BATCH_DEFAULT=32
+      - ADAPTIVE_BATCH_BENCHMARK_INTERVAL=3600
+      - ADAPTIVE_BATCH_CACHE_TTL=300
+      
+      # Cache settings
+      - QUANTIZATION_CACHE_DIR=/tmp/quantization_cache
+      - TENSORRT_CACHE_PATH=/app/tensorrt_cache
+      
+      # Development mode settings
       - DEVELOPMENT_MODE=true
+      - DETAILED_ERROR_RESPONSES=true
+      - LOG_REQUESTS=true
+      - LOG_RESPONSES=true
+      
+      # Authentication settings - disabled for testing
+      - AUTH_REQUIRED=false
+      - API_KEYS=
+      
+      # Monitoring
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PORT=9090
     volumes:
-      - ./api_test:/app
+      - ./api:/app/api
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./test_results:/app/test_results
+      - model_cache:/app/model_cache
+      - tensorrt_cache:/app/tensorrt_cache
+      - /tmp/quantization_cache:/tmp/quantization_cache
     working_dir: /app
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
@@ -29,3 +70,32 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9091:9090"  # Map to different port to avoid conflict with API metrics
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  model_cache:
+  tensorrt_cache:
+  prometheus_data:

@@ -251,10 +251,36 @@ if grep -q "nvidia" "${PROJECT_DIR}/docker-compose.yml"; then
     echo -e "${GREEN}✅ Docker Compose is configured for GPU usage${NC}"
 else
     echo -e "${YELLOW}⚠️ Docker Compose may not be properly configured for GPU usage${NC}"
+    echo -e "${YELLOW}   Consider using docker-compose.nvidia.yml instead: ${NC}"
+    echo -e "${YELLOW}   docker-compose -f docker-compose.nvidia.yml up -d${NC}"
+fi
+
+# Check if T4-optimized Docker Compose file exists
+if [ -f "${PROJECT_DIR}/docker-compose.nvidia.yml" ]; then
+    echo -e "${GREEN}✅ T4 GPU optimized Docker Compose file found${NC}"
+    # Check if it has proper T4 optimizations
+    if grep -q "T4_OPTIMIZED" "${PROJECT_DIR}/docker-compose.nvidia.yml"; then
+        echo -e "${GREEN}✅ T4 GPU optimizations are properly configured${NC}"
+    else
+        echo -e "${YELLOW}⚠️ T4 GPU optimizations may not be properly configured in docker-compose.nvidia.yml${NC}"
+    fi
+else
+    echo -e "${RED}❌ T4 GPU optimized Docker Compose file not found${NC}"
 fi
 
 echo
 echo -e "${GREEN}All components are present and correctly integrated.${NC}"
+echo
+echo -e "${BLUE}Checking T4 TensorRT Test Capability...${NC}"
+# Check if the T4 TensorRT test is executable
+if [ -x "${PROJECT_DIR}/test_tensorrt_t4.py" ]; then
+    echo -e "${GREEN}✅ T4 TensorRT test is executable${NC}"
+else
+    echo -e "${YELLOW}⚠️ T4 TensorRT test is not executable. Making it executable...${NC}"
+    chmod +x "${PROJECT_DIR}/test_tensorrt_t4.py"
+    echo -e "${GREEN}✅ T4 TensorRT test is now executable${NC}"
+fi
+
 echo
 echo -e "${BLUE}Next Steps:${NC}"
 echo -e "1. To run the automated tests locally:"
@@ -262,13 +288,19 @@ echo -e "   ${YELLOW}./run_tests.sh --all${NC}"
 echo
 echo -e "2. To test specifically T4 GPU and TensorRT integration:"
 echo -e "   ${YELLOW}./test_tensorrt_t4.py${NC}"
+echo -e "   ${YELLOW}./test_tensorrt_t4.py --url https://your-t4-server-address${NC}"
 echo
 echo -e "3. To deploy to T4 GPU server:"
 echo -e "   ${YELLOW}./deploy-to-t4.sh${NC}"
+echo -e "   ${YELLOW}./deploy-to-t4.sh --server your-t4-server-address --user your-username${NC}"
 echo
-echo -e "4. For more details on T4 GPU optimization, see:"
+echo -e "4. To deploy frontend to Vercel with T4 backend:"
+echo -e "   ${YELLOW}./deployment/deploy-vercel-t4.sh${NC}"
+echo
+echo -e "5. For more details on T4 GPU optimization, see:"
 echo -e "   ${YELLOW}cat T4_GPU_TESTING_PLAN.md${NC}"
 echo -e "   ${YELLOW}cat T4_GPU_QUICK_START.md${NC}"
+echo -e "   ${YELLOW}cat T4_NVIDIA_VERCEL_DEPLOYMENT.md${NC}"
 echo
 
 echo -e "${GREEN}Integration verification completed successfully!${NC}"

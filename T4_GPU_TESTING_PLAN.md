@@ -34,6 +34,7 @@ The testing suite includes the following components:
    - FP16/INT8 precision validation
    - Memory management tests
    - Dynamic batch sizing tests
+   - Adaptive batch sizing performance
 
 3. **Performance Benchmarks**
    - Embedding generation throughput
@@ -115,6 +116,13 @@ The test configuration is stored in a JSON file (`test_config.json` by default) 
     "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
     "precision": "fp16",
     "batch_sizes": [1, 8, 32, 64, 128],
+    "adaptive_batch": {
+        "enabled": true,
+        "min_batch_size": 1,
+        "max_batch_size": 128,
+        "default_batch_size": 32,
+        "t4_optimized": true
+    },
     "auth": {
         "enabled": false,
         "username": "",
@@ -154,6 +162,7 @@ For NVIDIA T4 GPUs, the following performance targets are expected:
 2. **Optimal Batch Size**: Expected in the range of 32-64 for embedding models
 3. **Memory Utilization**: Efficient memory management with dynamic batch sizing
 4. **Throughput**: 100+ embedding generations per second for small models
+5. **Adaptive Batch Sizing**: Dynamically optimized batch sizes based on model size, input length, and memory availability to maximize throughput while preventing OOM errors
 
 ## Troubleshooting
 

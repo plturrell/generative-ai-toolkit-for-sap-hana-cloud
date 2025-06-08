@@ -44,6 +44,20 @@ scrape_configs:
       - targets: ['api:9090']
     scrape_interval: 5s
     scheme: http
+    
+  - job_name: 'api-audit-logs'
+    metrics_path: '/metrics/audit'
+    static_configs:
+      - targets: ['api:9090']
+    scrape_interval: 10s
+    scheme: http
+
+  - job_name: 'api-debugging'
+    metrics_path: '/metrics/debug'
+    static_configs:
+      - targets: ['api:9090']
+    scrape_interval: 10s
+    scheme: http
 
 alerting:
   alertmanagers:

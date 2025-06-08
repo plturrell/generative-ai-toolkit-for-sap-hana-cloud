@@ -134,9 +134,90 @@ docker-compose restart
 
 ## Advanced Configuration
 
+### Adaptive Batch Sizing
+
+The T4 GPU deployment includes a sophisticated adaptive batch sizing system that automatically optimizes batch sizes based on:
+
+1. **GPU memory availability**
+2. **Model characteristics** (input/output size, hidden dimensions)
+3. **Workload patterns** (request frequency, input token distribution)
+4. **Performance history** (throughput at different batch sizes)
+5. **T4-specific optimizations** (tensor core alignment, mixed precision)
+
+This feature dynamically adjusts batch sizes to maximize throughput while preventing out-of-memory errors.
+
+#### Configuration Options
+
+To configure adaptive batch sizing, edit the environment variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  # Basic GPU settings
+  - ENABLE_GPU_ACCELERATION=true
+  - ENABLE_TENSORRT=true
+  - GPU_MEMORY_FRACTION=0.8
+  - PRECISION=fp16
+  
+  # Adaptive batch sizing settings
+  - ENABLE_ADAPTIVE_BATCH=true
+  - T4_OPTIMIZED=true
+  - ADAPTIVE_BATCH_MIN=1
+  - ADAPTIVE_BATCH_MAX=128
+  - ADAPTIVE_BATCH_DEFAULT=32
+  - ADAPTIVE_BATCH_BENCHMARK_INTERVAL=3600
+  - ADAPTIVE_BATCH_CACHE_TTL=300
+```
+
+Key settings:
+
+- `ENABLE_ADAPTIVE_BATCH`: Enable/disable adaptive batch sizing (true/false)
+- `T4_OPTIMIZED`: Apply T4-specific optimizations (true/false)
+- `ADAPTIVE_BATCH_MIN`: Minimum batch size to use (default: 1)
+- `ADAPTIVE_BATCH_MAX`: Maximum batch size to use (default: 128)
+- `ADAPTIVE_BATCH_DEFAULT`: Starting batch size when no performance history exists (default: 32)
+- `ADAPTIVE_BATCH_BENCHMARK_INTERVAL`: How often to run benchmarks (in seconds, default: 3600)
+- `ADAPTIVE_BATCH_CACHE_TTL`: How long to cache batch size recommendations (in seconds, default: 300)
+
+#### Using the API
+
+The system exposes an API for monitoring and configuring adaptive batch sizing:
+
+```bash
+# Register a model for adaptive batch sizing
+curl -X POST "http://<your-t4-server-address>/api/v1/batch-sizing/register-model" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "text-embedding-3-large",
+    "model_type": "embedding",
+    "input_size_bytes": 2,
+    "hidden_size_bytes": 8,
+    "output_size_bytes": 4,
+    "min_batch_size": 1,
+    "max_batch_size": 64,
+    "initial_batch_size": 8
+  }'
+
+# Get the recommended batch size for a specific input
+curl -X POST "http://<your-t4-server-address>/api/v1/batch-sizing/get-batch-size" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "text-embedding-3-large",
+    "input_tokens": 512,
+    "output_tokens": 0,
+    "force_rebenchmark": false
+  }'
+
+# View model statistics and performance data
+curl -X GET "http://<your-t4-server-address>/api/v1/batch-sizing/model-stats/text-embedding-3-large"
+```
+
+#### Example Code
+
+Check out the example in `examples/adaptive_batch_sizing.py` for a complete demonstration of how to use adaptive batch sizing in your application.
+
 ### Adjusting GPU Optimization Settings
 
-To fine-tune the T4 GPU optimization settings, edit the environment variables in `docker-compose.yml`:
+To fine-tune additional T4 GPU optimization settings, edit the environment variables in `docker-compose.yml`:
 
 ```yaml
 environment:
@@ -144,12 +225,27 @@ environment:
   - ENABLE_TENSORRT=true
   - GPU_MEMORY_FRACTION=0.8
   - PRECISION=fp16
-  - BATCH_SIZE=32
+  - TENSORRT_CACHE_PATH=/app/tensorrt_cache
+  - NVIDIA_VISIBLE_DEVICES=all
+  - NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ```
 
 ### Custom Embedding Models
 
 To use custom embedding models, update the configuration in the API settings or specify the model at runtime.
+
+## Performance Monitoring
+
+The toolkit includes a comprehensive performance monitoring system:
+
+1. **Grafana Dashboard**: Access real-time GPU metrics and batch size optimization data at `http://<your-t4-server-address>/grafana`
+
+2. **API Metrics**: Get detailed performance metrics through the API:
+   ```bash
+   curl -X GET "http://<your-t4-server-address>/api/v1/metrics/gpu"
+   ```
+
+3. **Prometheus**: Raw metrics are available at `http://<your-t4-server-address>/metrics`
 
 ## Troubleshooting
 
@@ -180,6 +276,33 @@ docker ps
 ### GPU Memory Issues
 
 If you encounter GPU memory issues, try adjusting the `GPU_MEMORY_FRACTION` setting in `docker-compose.yml` to a lower value (e.g., 0.6).
+
+### Batch Size Issues
+
+If you experience problems with batch sizes:
+
+1. Check the adaptive batch sizing logs:
+   ```bash
+   docker-compose logs | grep adaptive_batch
+   ```
+
+2. Try running with a fixed batch size by disabling adaptive batch sizing:
+   ```yaml
+   environment:
+     - ENABLE_ADAPTIVE_BATCH=false
+     - FIXED_BATCH_SIZE=16
+   ```
+
+3. Force a rebenchmark through the API:
+   ```bash
+   curl -X POST "http://<your-t4-server-address>/api/v1/batch-sizing/get-batch-size" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "model_id": "text-embedding-3-large",
+       "input_tokens": 512,
+       "force_rebenchmark": true
+     }'
+   ```
 
 ## Next Steps
 
