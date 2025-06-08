@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  hana-ai-backend:
+    build:
+      context: .
+      dockerfile: deployment/nvidia-t4/Dockerfile
+    image: hana-ai-toolkit-t4:production
+    container_name: hana-ai-toolkit-t4-production
+    env_file:
+      - production-environment.env
+    ports:
+      - "${API_PORT:-8000}:8000"
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - nvidia-cache:/tmp/cuda-cache
+      - tensorrt-cache:/tmp/tensorrt_engines
+      - model-cache:/app/model-cache
+      - config-data:/app/config
+    restart: unless-stopped
+    networks:
+      - hana-ai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: hana-ai-prometheus-production
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "${PROMETHEUS_WEB_PORT:-9091}:9090"
+    restart: unless-stopped
+    networks:
+      - hana-ai-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: hana-ai-grafana-production
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    restart: unless-stopped
+    networks:
+      - hana-ai-network
+    depends_on:
+      - prometheus
+
+  nginx:
+    image: nginx:alpine
+    container_name: hana-ai-nginx-production
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    restart: unless-stopped
+    networks:
+      - hana-ai-network
+    depends_on:
+      - hana-ai-backend
+
+  nvidia-smi-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:latest
+    container_name: nvidia-smi-exporter-production
+    restart: unless-stopped
+    ports:
+      - "9835:9835"
+    runtime: nvidia
+    networks:
+      - hana-ai-network
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  hana-ai-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  nvidia-cache:
+  tensorrt-cache:
+  model-cache:
+  config-data:
